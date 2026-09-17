@@ -7,6 +7,7 @@ import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import AdminDashboard from './pages/dashboard/AdminDashboard';
 import Directory from './pages/Directory';
+import Profile from './pages/Profile';
 
 export const AppRoutes = () => {
     return (
@@ -20,6 +21,9 @@ export const AppRoutes = () => {
             <Route element={<ProtectedRoute />}>
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/directory" element={<Directory />} />
+                <Route path="/marketplace" element={<Directory />} />
+                <Route path="/profile/:id" element={<Profile />} />
+                <Route path="/cuidador/:id" element={<Profile />} />
             </Route>
 
             {/* Ruta exclusiva de Administrador */}
