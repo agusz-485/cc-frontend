@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8080/api/v1', // Tu backend Spring Boot
+    baseURL: import.meta.env.VITE_API_URL || '/api/v1', // Usa el proxy de Vite en dev o la URL configurada
     headers: {
         'Content-Type': 'application/json',
     },
@@ -19,13 +19,15 @@ api.interceptors.request.use(
     (error) => Promise.reject(error)
 );
 
-// Interceptor para capturar errores globales (ej. token expirado 401)
+// Interceptor para capturar errores globales (ej. token expirado o inválido 401/403)
 api.interceptors.response.use(
     (response) => response,
     (error) => {
-        if (error.response && error.response.status === 401) {
-            localStorage.removeItem('token');
-            // Opcional: window.location.href = '/login';
+        if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+            if (!error.config?.url?.includes('/auth/login')) {
+                localStorage.removeItem('token');
+                localStorage.removeItem('user_session');
+            }
         }
         return Promise.reject(error);
     }

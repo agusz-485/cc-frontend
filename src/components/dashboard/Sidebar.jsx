@@ -38,21 +38,21 @@ export function Sidebar({ active, setActive, navigate, role, setRole, userName }
     const UserIcon = Users;
 
     const items = getSidebarItems();
-    const badge = role === "familiar" ? { messages: 1, bookings: 1 } : role === "cuidador" ? { messages: 1, solicitudes: 1 } : {};
+    const badge = role === "familiar" ? {} : role === "cuidador" ? { solicitudes: 1 } : {};
 
     const getProfileInfo = () => {
         const name = userName || localStorage.getItem("user_name");
         const storedEmail = localStorage.getItem("user_email");
-        if (role === "cuidador") return { name: name || "María González", desc: storedEmail || "Enfermera" };
-        if (role === "administrador") return { name: name || "Admin Principal", desc: storedEmail || "Acceso Total ✦" };
-        return { name: name || "Familia García", desc: storedEmail || "Plan Premium ✦" };
+        if (role === "cuidador") return { name: name || "María González", desc: storedEmail || "Cuidador / Enfermero" };
+        if (role === "administrador") return { name: name || "Admin Principal", desc: storedEmail || "Administrador" };
+        return { name: name || "Familia García", desc: storedEmail || "Cuenta Familiar" };
     };
 
     const profile = getProfileInfo();
 
     return (<aside className="w-56 flex-shrink-0 flex flex-col" style={{ backgroundColor: P.dark }}>
         <div className="px-5 py-5.5 flex items-center justify-center border-b" style={{ borderColor: "rgba(255,255,255,0.1)" }}>
-            <button type="button" onClick={() => navigate("/")} className="hover:scale-[1.02] transition-transform duration-200 focus:outline-none animate-none" aria-label="Ir al inicio de CareConnect">
+            <button type="button" onClick={() => navigate("/directory")} className="hover:scale-[1.02] transition-transform duration-200 focus:outline-none animate-none cursor-pointer" aria-label="Ir al Marketplace de CareConnect">
                 <img src={logoCareConnect} alt="CareConnect" className="h-9 w-auto object-contain brightness-0 invert" />
             </button>
         </div>

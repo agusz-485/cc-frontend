@@ -1,7 +1,7 @@
 import { Calendar, DollarSign, Users, Star, Clock, ArrowUpRight, ChevronRight } from "lucide-react";
 import { P, formatARS } from "../../shared";
 
-export function SectionInicio({ setActive, navigate, bookings = [], savedCaregivers = [], activity = [] }) {
+export function SectionInicio({ setActive, navigate, bookings = [], savedCaregivers = [], activity = [], userName }) {
     const activeBookingsCount = bookings.filter(b => b.status === "confirmed" || b.status === "pending").length;
     const totalSpent = bookings.filter(b => b.status === "confirmed" || b.status === "completed").reduce((sum, b) => sum + b.amount, 0);
     const savedCount = savedCaregivers.length;
@@ -17,7 +17,7 @@ export function SectionInicio({ setActive, navigate, bookings = [], savedCaregiv
         <div className="max-w-5xl mx-auto">
             <div className="mb-6">
                 <h1 className="text-2xl font-bold" style={{ color: P.dark, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-                    Buenos días 👋
+                    Buenos días{userName ? `, ${userName}` : ""} 👋
                 </h1>
                 <p className="text-sm mt-1" style={{ color: P.neutralDark }}>
                     {new Date().toLocaleDateString('es-AR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}

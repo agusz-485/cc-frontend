@@ -13,7 +13,7 @@ const getLocalSeniors = (familiarId) => {
 
 export const getAdultosMayores = async (familiarId) => {
   try {
-    const response = await api.get("/v1/adultos-mayores");
+    const response = await api.get("/adultos-mayores");
     const resData = response.data;
     const localDetails = JSON.parse(localStorage.getItem("seniors_details") || "{}");
     
@@ -38,7 +38,7 @@ export const getAdultosMayores = async (familiarId) => {
 
 export const createAdultoMayor = async (payload) => {
   try {
-    const response = await api.post("/v1/adultos-mayores", payload);
+    const response = await api.post("/adultos-mayores", payload);
     const resData = response.data;
     const id = resData.idAdultoMayor || resData.id;
     

@@ -23,9 +23,23 @@ export function FamiliarDashboard() {
   const { user } = useAuth();
   const userId = user?.id || localStorage.getItem("user_id") || "11";
   
+  const getFullName = () => {
+    const rawNombre = user?.nombre || localStorage.getItem("user_name") || "";
+    const rawApellido = user?.apellido || localStorage.getItem("user_apellido") || "";
+    if (rawApellido && !rawNombre.toLowerCase().includes(rawApellido.toLowerCase())) {
+      return `${rawNombre} ${rawApellido}`.trim();
+    }
+    return rawNombre || "Usuario";
+  };
+
   const [activeNav, setActiveNav] = useState("inicio");
-  const [userName, setUserName] = useState(user?.nombre || localStorage.getItem("user_name") || "Usuario");
+  const [userName, setUserName] = useState(getFullName());
   const [seniors, setSeniors] = useState([]);
+
+  useEffect(() => {
+    const fullName = getFullName();
+    if (fullName) setUserName(fullName);
+  }, [user]);
 
   // Cargar pacientes (Adultos Mayores) del familiar autenticado desde el servicio Axios
   useEffect(() => {
@@ -75,6 +89,7 @@ export function FamiliarDashboard() {
             bookings={ALL_BOOKINGS} 
             savedCaregivers={SAVED_CAREGIVERS} 
             activity={ACTIVITY} 
+            userName={userName}
           />
         )}
         {activeNav === "messages" && <SectionMessages />}

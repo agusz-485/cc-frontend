@@ -120,12 +120,12 @@ export default function Register() {
                 </select>
 
                 {(formData.rol === "CUIDADOR" ||
-                formData.rol === "ENFERMERO") && (
-                    <RegisterProfessionalForm
-                        formData={formData}
-                        handleChange={handleChange}
-                    />
-                )}
+                    formData.rol === "ENFERMERO") && (
+                        <RegisterProfessionalForm
+                            formData={formData}
+                            handleChange={handleChange}
+                        />
+                    )}
 
                 <button type="submit">
                     Registrar

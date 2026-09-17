@@ -28,7 +28,7 @@ export default function AdminSidebar({ activeTab = "inicio_admin", setActiveTab 
         <aside className="w-56 flex-shrink-0 flex flex-col h-screen" style={{ backgroundColor: P?.dark || "#0f172a" }}>
             {/* Logo */}
             <div className="px-5 py-5.5 flex items-center justify-center border-b" style={{ borderColor: "rgba(255,255,255,0.1)" }}>
-                <button type="button" onClick={() => navigate("/")} className="hover:scale-[1.02] transition-transform duration-200 focus:outline-none cursor-pointer" aria-label="Ir al inicio de CareConnect">
+                <button type="button" onClick={() => navigate("/directory")} className="hover:scale-[1.02] transition-transform duration-200 focus:outline-none cursor-pointer" aria-label="Ir al Marketplace de CareConnect">
                     <img src={logoCareConnect} alt="CareConnect" className="h-9 w-auto object-contain brightness-0 invert" />
                 </button>
             </div>
