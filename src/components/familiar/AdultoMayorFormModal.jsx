@@ -36,8 +36,8 @@ export function AdultoMayorFormModal({ isOpen, onClose, onSubmit }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-3xl p-6 border shadow-xl w-full max-w-lg relative animate-in fade-in zoom-in duration-200" style={{ borderColor: P.baseNeutral }}>
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+      <div className="bg-white rounded-3xl p-6 border shadow-2xl w-full max-w-lg relative animate-in fade-in zoom-in duration-200" style={{ borderColor: P.baseNeutral }}>
         <button onClick={onClose} className="absolute top-4 right-4 p-1.5 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors">
           <X className="w-5 h-5" />
         </button>

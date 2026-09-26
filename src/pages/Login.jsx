@@ -10,14 +10,14 @@ export default function Login() {
     const { login } = useAuth();
     const navigate = useNavigate();
 
-const handleSubmit = async (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
         setLoading(true);
 
         try {
             const data = await login({ email, password });
-            
+
             // Busca el rol tanto plano como anidado
             const rawRole = data?.rol || data?.role || data?.user?.rol || data?.user?.role || '';
             const role = rawRole.toUpperCase();
@@ -41,7 +41,7 @@ const handleSubmit = async (e) => {
         <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
             <div className="w-full max-w-md rounded-xl bg-white p-8 shadow-md">
                 <h2 className="mb-6 text-center text-2xl font-bold text-gray-800">CareConnect</h2>
-                
+
                 {error && (
                     <div className="mb-4 rounded bg-red-100 p-2.5 text-sm text-red-600">
                         {error}

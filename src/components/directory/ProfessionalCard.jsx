@@ -1,16 +1,33 @@
-import { MapPin } from "lucide-react";
+import { MapPin, Heart } from "lucide-react";
 import { P, formatARS } from "../../shared";
 
-export function ProfessionalCard({ caregiver, onSelect }) {
+export function ProfessionalCard({ caregiver, onSelect, isFavorite = false, onToggleFavorite }) {
   return (
-    <div className="rounded-2xl overflow-hidden bg-white border transition-all hover:-translate-y-1.5 shadow-sm hover:shadow-md" style={{ borderColor: P.baseNeutral }}>
+    <div className="rounded-2xl overflow-hidden bg-white border transition-all hover:-translate-y-1.5 shadow-sm hover:shadow-md relative group" style={{ borderColor: P.baseNeutral }}>
       {/* Card image */}
       <div className="relative h-44 bg-slate-100">
         <img src={caregiver.image} alt={caregiver.name} className="w-full h-full object-cover"/>
-        <div className="absolute top-3 left-3 right-3 flex items-start justify-between">
-          <span />
+        <div className="absolute top-3 left-3 right-3 flex items-start justify-between pointer-events-none">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleFavorite?.(caregiver);
+            }}
+            aria-label={isFavorite ? "Quitar de favoritos" : "Guardar en favoritos"}
+            title={isFavorite ? "Quitar de favoritos" : "Guardar en favoritos"}
+            className="w-8 h-8 rounded-full flex items-center justify-center bg-white/90 backdrop-blur-md shadow transition-transform hover:scale-110 active:scale-95 cursor-pointer pointer-events-auto"
+          >
+            <Heart
+              className={`w-4 h-4 transition-colors ${
+                isFavorite
+                  ? "fill-rose-500 text-rose-500"
+                  : "text-slate-400 hover:text-rose-500"
+              }`}
+            />
+          </button>
           {!caregiver.available && (
-            <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-white" style={{ backgroundColor: "rgba(0,0,0,0.6)" }}>
+            <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-white shadow-sm pointer-events-auto" style={{ backgroundColor: "rgba(0,0,0,0.6)" }}>
               No disponible
             </span>
           )}

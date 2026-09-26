@@ -3,11 +3,16 @@ import { useNavigate } from "react-router";
 import { Search, MapPin, Filter, LayoutDashboard } from "lucide-react";
 import { P, formatARS } from "../shared";
 import { searchProfessionals } from "../services/searchService";
+import { getFavoriteCaregivers, toggleFavoriteCaregiver } from "../services/favoritesService";
+import { useAuth } from "../context/AuthContext";
 import { FilterSidebar } from "../components/directory/FilterSidebar";
 import { ProfessionalCard } from "../components/directory/ProfessionalCard";
 
 export default function Directory() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const userId = user?.id || localStorage.getItem("user_id") || "current";
+
   const [searchQuery, setSearchQuery] = useState("");
   const [priceMax, setPriceMax] = useState(8000);
   const [minRating, setMinRating] = useState(0);
@@ -17,6 +22,7 @@ export default function Directory() {
   const [selectedLocation, setSelectedLocation] = useState("Todas las ubicaciones");
   const [professionals, setProfessionals] = useState([]);
   const [selectedType, setSelectedType] = useState("todos");
+  const [favorites, setFavorites] = useState([]);
 
   const locationOptions = ["Todas las ubicaciones", "Palermo", "Belgrano", "Recoleta", "Almagro", "Caballito", "San Telmo", "Lanús", "Quilmes", "San Isidro"];
   const careTypeOptions = ["Alzheimer", "Parkinson", "Post-operatorio", "Rehabilitación", "Cuidados Paliativos", "Acompañamiento"];
@@ -29,6 +35,16 @@ export default function Directory() {
     };
     fetchList();
   }, []);
+
+  // Cargar favoritos del usuario
+  useEffect(() => {
+    setFavorites(getFavoriteCaregivers(userId));
+  }, [userId]);
+
+  const handleToggleFavorite = (caregiver) => {
+    const updated = toggleFavoriteCaregiver(caregiver, userId);
+    setFavorites(updated);
+  };
 
   const filtered = professionals.filter((c) => {
     const q = searchQuery.toLowerCase();
@@ -149,6 +165,8 @@ export default function Directory() {
                 <ProfessionalCard 
                   key={caregiver.id} 
                   caregiver={caregiver} 
+                  isFavorite={favorites.some((f) => Number(f.id) === Number(caregiver.id))}
+                  onToggleFavorite={handleToggleFavorite}
                   onSelect={(c) => navigate(`/cuidador/${c.id}`)}
                 />
               ))}

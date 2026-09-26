@@ -1,7 +1,7 @@
-import { MapPin, CheckCircle } from "lucide-react";
+import { MapPin, CheckCircle, Heart } from "lucide-react";
 import { P, StarRating, SpecialtyBadge } from "../../shared";
 
-export function ProfileHeader({ caregiver }) {
+export function ProfileHeader({ caregiver, isFavorite = false, onToggleFavorite }) {
   const specialties = caregiver?.specialties || [];
   const image =
     caregiver?.image ||
@@ -43,6 +43,23 @@ export function ProfileHeader({ caregiver }) {
                 </span>
               </div>
             </div>
+
+            <button
+              type="button"
+              onClick={() => onToggleFavorite?.(caregiver)}
+              className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold border transition-all active:scale-95 cursor-pointer ${
+                isFavorite
+                  ? "bg-rose-50 text-rose-600 border-rose-200 hover:bg-rose-100"
+                  : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+              }`}
+            >
+              <Heart
+                className={`w-4 h-4 ${
+                  isFavorite ? "fill-rose-500 text-rose-500" : "text-slate-400"
+                }`}
+              />
+              <span>{isFavorite ? "Guardado en Favoritos" : "Guardar en Favoritos"}</span>
+            </button>
           </div>
 
           <div className="flex items-center gap-3 flex-wrap">

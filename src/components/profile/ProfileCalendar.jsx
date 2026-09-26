@@ -1,10 +1,7 @@
-import { useNavigate } from "react-router-dom";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { P, formatARS } from "../../shared";
 
-export function ProfileCalendar({ caregiver, selectedDays, toggleDay }) {
-  const navigate = useNavigate();
-
+export function ProfileCalendar({ caregiver, selectedDays, toggleDay, onOpenBookingModal }) {
   // Julio 2026: 31 días, inicia miércoles (Mon-first offset = 2)
   const daysInMonth = 31;
   const firstDayOffset = 2;
@@ -12,10 +9,22 @@ export function ProfileCalendar({ caregiver, selectedDays, toggleDay }) {
   const isPast = (day) => day <= 2;
   const weekDays = ["L", "M", "X", "J", "V", "S", "D"];
 
-  const dailyRateVal = caregiver.dailyRate || (caregiver.hourlyRate * 8);
+  const dailyRateVal = caregiver?.dailyRate || (caregiver?.hourlyRate ? caregiver.hourlyRate * 8 : 24000);
   const totalBase = selectedDays.size * dailyRateVal;
   const commission = totalBase * 0.05;
   const totalFinal = totalBase + commission;
+
+  const handleHireClick = () => {
+    if (selectedDays.size === 0) return;
+    if (onOpenBookingModal) {
+      onOpenBookingModal({
+        dailyRate: dailyRateVal,
+        totalBase,
+        commission,
+        totalFinal,
+      });
+    }
+  };
 
   return (
     <div className="mt-8 pt-6 border-t" style={{ borderColor: P.baseNeutral }}>
@@ -151,7 +160,7 @@ export function ProfileCalendar({ caregiver, selectedDays, toggleDay }) {
           </h4>
           <div className="flex justify-between text-sm">
             <span style={{ color: P.neutralDark }}>
-              {formatARS(caregiver.dailyRate || caregiver.hourlyRate * 8)} ×{" "}
+              {formatARS(dailyRateVal)} ×{" "}
               {selectedDays.size} día{selectedDays.size > 1 ? "s" : ""}
             </span>
             <span className="font-bold" style={{ color: P.dark }}>
@@ -181,9 +190,9 @@ export function ProfileCalendar({ caregiver, selectedDays, toggleDay }) {
 
       <div className="mt-4">
         <button
-          onClick={() => navigate("/dashboard")}
+          onClick={handleHireClick}
           disabled={selectedDays.size === 0}
-          className="w-full py-4 rounded-xl font-bold text-white text-base transition-all active:scale-95 text-center block"
+          className="w-full py-4 rounded-xl font-bold text-white text-base transition-all active:scale-95 text-center block cursor-pointer"
           style={{
             backgroundColor: selectedDays.size > 0 ? P.accent : P.baseNeutral,
             cursor: selectedDays.size === 0 ? "not-allowed" : "pointer",

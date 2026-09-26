@@ -6,3 +6,4 @@ export { ProfileCertificationsTab } from "./ProfileCertificationsTab";
 export { ProfileReviewsTab } from "./ProfileReviewsTab";
 export { ProfilePricingWidget } from "./ProfilePricingWidget";
 export { ProfileNotFound } from "./ProfileNotFound";
+export { BookingModal } from "./BookingModal";

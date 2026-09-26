@@ -3,6 +3,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import { ChevronLeft, Loader2 } from "lucide-react";
 import { P } from "../shared";
 import { getProfessionalById } from "../services/searchService";
+import { isCaregiverFavorite, toggleFavoriteCaregiver } from "../services/favoritesService";
+import { useAuth } from "../context/AuthContext";
 import {
   ProfileHeader,
   ProfileTabsNav,
@@ -11,16 +13,29 @@ import {
   ProfileReviewsTab,
   ProfilePricingWidget,
   ProfileNotFound,
+  BookingModal,
 } from "../components/profile";
 
 export default function Profile() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const userId = user?.id || localStorage.getItem("user_id") || "current";
 
   const [caregiver, setCaregiver] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isFavorite, setIsFavorite] = useState(false);
   const [selectedDays, setSelectedDays] = useState(new Set());
   const [activeTab, setActiveTab] = useState("bio");
+
+  // Booking modal state
+  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+  const [modalPricing, setModalPricing] = useState({
+    dailyRate: 0,
+    totalBase: 0,
+    commission: 0,
+    totalFinal: 0,
+  });
 
   useEffect(() => {
     let isMounted = true;
@@ -50,6 +65,19 @@ export default function Profile() {
     };
   }, [id]);
 
+  useEffect(() => {
+    if (caregiver && caregiver.id) {
+      setIsFavorite(isCaregiverFavorite(caregiver.id, userId));
+    }
+  }, [caregiver, userId]);
+
+  const handleToggleFavorite = () => {
+    if (!caregiver) return;
+    const updated = toggleFavoriteCaregiver(caregiver, userId);
+    const fav = updated.some((c) => Number(c.id) === Number(caregiver.id));
+    setIsFavorite(fav);
+  };
+
   const blockedDays = useMemo(() => new Set([4, 5, 11, 12, 15, 16, 18, 19, 25, 26]), []);
   const isPast = (day) => day <= 2;
 
@@ -61,6 +89,11 @@ export default function Profile() {
       else next.add(day);
       return next;
     });
+  };
+
+  const handleOpenBookingModal = (pricingData) => {
+    setModalPricing(pricingData);
+    setIsBookingModalOpen(true);
   };
 
   // Estado de carga
@@ -98,7 +131,11 @@ export default function Profile() {
         <div className="flex gap-6 items-start flex-col lg:flex-row">
           {/* Main profile content */}
           <div className="flex-1 min-w-0 w-full">
-            <ProfileHeader caregiver={caregiver} />
+            <ProfileHeader 
+              caregiver={caregiver} 
+              isFavorite={isFavorite} 
+              onToggleFavorite={handleToggleFavorite} 
+            />
 
             <div
               className="rounded-2xl overflow-hidden"
@@ -112,6 +149,7 @@ export default function Profile() {
                     caregiver={caregiver}
                     selectedDays={selectedDays}
                     toggleDay={toggleDay}
+                    onOpenBookingModal={handleOpenBookingModal}
                   />
                 )}
 
@@ -128,6 +166,18 @@ export default function Profile() {
           <ProfilePricingWidget caregiver={caregiver} />
         </div>
       </div>
+
+      {/* Interactive Booking Modal */}
+      <BookingModal
+        isOpen={isBookingModalOpen}
+        onClose={() => setIsBookingModalOpen(false)}
+        caregiver={caregiver}
+        selectedDays={selectedDays}
+        dailyRate={modalPricing.dailyRate}
+        totalBase={modalPricing.totalBase}
+        commission={modalPricing.commission}
+        totalFinal={modalPricing.totalFinal}
+      />
     </div>
   );
 }

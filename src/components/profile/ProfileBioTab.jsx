@@ -1,7 +1,7 @@
 import { P } from "../../shared";
 import { ProfileCalendar } from "./ProfileCalendar";
 
-export function ProfileBioTab({ caregiver, selectedDays, toggleDay }) {
+export function ProfileBioTab({ caregiver, selectedDays, toggleDay, onOpenBookingModal }) {
   const quickDetails = [
     {
       label: "Disponibilidad",
@@ -62,6 +62,7 @@ export function ProfileBioTab({ caregiver, selectedDays, toggleDay }) {
         caregiver={caregiver}
         selectedDays={selectedDays}
         toggleDay={toggleDay}
+        onOpenBookingModal={onOpenBookingModal}
       />
     </div>
   );
