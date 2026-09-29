@@ -7,30 +7,17 @@ import { AdultoMayorFormModal } from "../familiar/AdultoMayorFormModal";
 import { ConditionPanel } from "../familiar/ConditionPanel";
 import { MedicationPanel } from "../familiar/MedicationPanel";
 import { NeedsPanel } from "../familiar/NeedsPanel";
+import { SeniorDetailSidebar } from "../familiar/SeniorDetailSidebar";
 
 export function SectionAdultosACargo({ seniors, setSeniors }) {
     const [selectedSenior, setSelectedSenior] = useState(null);
     const [showAddForm, setShowAddForm] = useState(false);
 
-    // Método UML: +calcularEdad() : int
-    const calcularEdad = (dobString) => {
-        if (!dobString) return 0;
-        const birthDate = new Date(dobString);
-        const today = new Date();
-        let age = today.getFullYear() - birthDate.getFullYear();
-        const m = today.getMonth() - birthDate.getMonth();
-        if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-            age--;
-        }
-        return age;
-    };
-
-    // Método UML: +estaVigente(LocalDate hoy) : boolean
     const estaVigente = (startDateStr, endDateStr) => {
         if (!startDateStr || !endDateStr) return false;
         const start = new Date(startDateStr);
         const end = new Date(endDateStr);
-        const today = new Date("2026-07-29"); // Mock app date context
+        const today = new Date("2026-07-29");
         return today >= start && today <= end;
     };
 
@@ -206,7 +193,7 @@ export function SectionAdultosACargo({ seniors, setSeniors }) {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                             {seniors.map(s => (
                                 <AdultoMayorCard 
-                                    key={s.idAdultoMayor} 
+                                    key={s.idAdultoMayor || s.id} 
                                     senior={s} 
                                     onViewClinicalHistory={setSelectedSenior} 
                                 />
@@ -224,17 +211,14 @@ export function SectionAdultosACargo({ seniors, setSeniors }) {
                 {/* VIEW: CLINICAL HISTORIAL (DETAIL) */}
                 {selectedSenior && (
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
                         {/* Left: General Card & Conditions & Needs */}
                         <div className="lg:col-span-2 space-y-6">
-                            {/* Medical Conditions Panel */}
                             <ConditionPanel 
                                 selectedSenior={selectedSenior}
                                 onAddCondition={handleAddCondition}
                                 onDeleteCondition={deleteCondition}
                             />
 
-                            {/* Medical Treatments Panel */}
                             <MedicationPanel 
                                 selectedSenior={selectedSenior}
                                 onAddMedication={handleAddMedication}
@@ -245,42 +229,8 @@ export function SectionAdultosACargo({ seniors, setSeniors }) {
 
                         {/* Right: Senior Profile Sidebar & Needs */}
                         <div className="space-y-6">
+                            <SeniorDetailSidebar selectedSenior={selectedSenior} />
 
-                            {/* Profile details */}
-                            <div className="bg-white rounded-3xl p-6 border shadow-sm space-y-4" style={{ borderColor: P.baseNeutral }}>
-                                <div className="text-center pb-4 border-b" style={{ borderColor: P.baseNeutral }}>
-                                    <div className="w-16 h-16 rounded-full bg-sky-100 text-sky-700 font-extrabold text-2xl flex items-center justify-center mx-auto mb-3">
-                                        {selectedSenior.nombre[0]}{selectedSenior.apellido[0]}
-                                    </div>
-                                    <h4 className="font-extrabold text-base" style={{ color: P.dark }}>{selectedSenior.nombre} {selectedSenior.apellido}</h4>
-                                    <p className="text-xs" style={{ color: P.neutralDark }}>DNI: {selectedSenior.dni}</p>
-                                </div>
-
-                                <div className="space-y-2.5 text-xs font-semibold text-left" style={{ color: P.dark }}>
-                                    <div className="flex justify-between">
-                                        <span style={{ color: P.neutralDark }}>Edad:</span>
-                                        <span>{calcularEdad(selectedSenior.fechaNacimiento)} años</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span style={{ color: P.neutralDark }}>Nacimiento:</span>
-                                        <span>{selectedSenior.fechaNacimiento}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span style={{ color: P.neutralDark }}>Movilidad:</span>
-                                        <span>{selectedSenior.movilidad}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span style={{ color: P.neutralDark }}>Creado el:</span>
-                                        <span>{selectedSenior.fechaCreacion}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span style={{ color: P.neutralDark }}>Actualizado el:</span>
-                                        <span>{selectedSenior.fechaActualizacion}</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Daily Needs Panel */}
                             <NeedsPanel 
                                 selectedSenior={selectedSenior}
                                 onAddNeed={handleAddNeed}
@@ -293,3 +243,5 @@ export function SectionAdultosACargo({ seniors, setSeniors }) {
         </div>
     );
 }
+
+export default SectionAdultosACargo;

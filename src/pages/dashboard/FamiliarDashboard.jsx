@@ -163,7 +163,7 @@ export function FamiliarDashboard() {
         )}
         {activeNav === "documents" && <SectionDocuments documents={DOCUMENTS} />}
         {activeNav === "settings" && (
-          <SectionSettings onProfileUpdate={handleProfileNameChange} />
+          <SectionSettings onProfileUpdate={handleProfileNameChange} role="familiar" />
         )}
       </div>
     </div>

@@ -15,7 +15,7 @@ export function FilterSidebar({
     setCareTypes((prev) => (prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]));
   };
 
-  const activeFilterCount = careTypes.length + (minRating > 0 ? 1 : 0) + (priceMax < 8000 ? 1 : 0) + (selectedType !== "todos" ? 1 : 0);
+  const activeFilterCount = careTypes.length + (minRating > 0 ? 1 : 0) + (priceMax < 100000 ? 1 : 0) + (selectedType !== "todos" ? 1 : 0);
 
   return (
     <aside className="w-60 flex-shrink-0 hidden lg:block text-left">
@@ -82,20 +82,22 @@ export function FilterSidebar({
         {/* Price range */}
         <div className="my-5">
           <p className="text-xs font-bold uppercase tracking-wider mb-1 text-slate-500">Precio máx. por hora</p>
-          <p className="text-sm font-extrabold mb-3" style={{ color: P.primary }}>{formatARS(priceMax)}/h</p>
+          <p className="text-sm font-extrabold mb-3" style={{ color: P.primary }}>
+            {priceMax >= 100000 ? "Sin límite ($100.000+)" : `${formatARS(priceMax)}/h`}
+          </p>
           <input
             type="range"
-            min={2000}
-            max={8000}
-            step={200}
+            min={1000}
+            max={100000}
+            step={1000}
             value={priceMax}
             onChange={(e) => setPriceMax(+e.target.value)}
             className="w-full cursor-pointer"
             style={{ accentColor: P.primary }}
           />
           <div className="flex justify-between text-[10px] font-bold text-slate-400 mt-1">
-            <span>$2.000</span>
-            <span>$8.000</span>
+            <span>$1.000</span>
+            <span>$100.000+</span>
           </div>
         </div>
 
@@ -122,7 +124,7 @@ export function FilterSidebar({
 
         {activeFilterCount > 0 && (
           <button
-            onClick={() => { setCareTypes([]); setMinRating(0); setPriceMax(8000); setSelectedType("todos"); }}
+            onClick={() => { setCareTypes([]); setMinRating(0); setPriceMax(100000); setSelectedType("todos"); }}
             className="w-full mt-5 py-2.5 rounded-xl text-xs font-bold border transition-colors hover:bg-slate-50 text-slate-500 cursor-pointer"
             style={{ borderColor: P.baseNeutral }}
           >

@@ -1,34 +1,40 @@
-import { Award, CheckCircle } from "lucide-react";
+import { Award, CheckCircle, ShieldAlert } from "lucide-react";
 import { P } from "../../shared";
 
-const DEFAULT_CERTIFICATIONS = [
-  { title: "Grado en Enfermería", issuer: "Universidad Complutense de Madrid", year: "2013" },
-  { title: "Especialidad en Enfermería Geriátrica", issuer: "Hospital Gregorio Marañón", year: "2015" },
-  { title: "RCP Avanzado y DEA", issuer: "Cruz Roja Española", year: "2024" },
-  { title: "Cuidados Paliativos Domiciliarios", issuer: "Sociedad Española de Geriatría", year: "2021" },
-  { title: "Manejo de Enfermedades Neurodegenerativas", issuer: "CEAFA", year: "2022" },
-];
-
 export function ProfileCertificationsTab({ caregiver }) {
-  const rawCerts = caregiver?.certifications;
+  const rawCerts = caregiver?.certifications || [];
 
-  const certifications =
-    rawCerts && rawCerts.length > 0
-      ? rawCerts.map((c) => {
-          if (typeof c === "string") {
-            return {
-              title: c,
-              issuer: "Certificación Profesional Habilitada",
-              year: "Vigente",
-            };
-          }
-          return {
-            title: c.title || "Certificación Oficial",
-            issuer: c.issuer || "Entidad Habilitada",
-            year: c.year || "Vigente",
-          };
-        })
-      : DEFAULT_CERTIFICATIONS;
+  const certifications = rawCerts.map((c) => {
+    if (typeof c === "string") {
+      return {
+        title: c,
+        issuer: "Certificación Registrada",
+        year: "Vigente",
+      };
+    }
+    return {
+      title: c.title || "Certificación Oficial",
+      issuer: c.issuer || "Entidad Habilitante",
+      year: c.year || "Vigente",
+    };
+  });
+
+  if (certifications.length === 0) {
+    return (
+      <div
+        className="p-8 text-center rounded-2xl border border-dashed flex flex-col items-center justify-center"
+        style={{ borderColor: P.baseNeutral }}
+      >
+        <ShieldAlert className="w-10 h-10 mb-2 text-slate-300" />
+        <p className="font-bold text-sm text-slate-700">Sin certificaciones adicionales</p>
+        <p className="text-xs text-slate-400 mt-1">
+          {caregiver?.tipo === "enfermero"
+            ? "El profesional cuenta con su matrícula profesional validada."
+            : "Este profesional aún no ha registrado certificados o diplomas complementarios."}
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-3">

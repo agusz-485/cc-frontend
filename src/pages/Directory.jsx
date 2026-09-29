@@ -14,7 +14,7 @@ export default function Directory() {
   const userId = user?.id || localStorage.getItem("user_id") || "current";
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [priceMax, setPriceMax] = useState(8000);
+  const [priceMax, setPriceMax] = useState(100000);
   const [minRating, setMinRating] = useState(0);
   const [careTypes, setCareTypes] = useState([]);
   const [sortBy, setSortBy] = useState("rating");
@@ -48,11 +48,11 @@ export default function Directory() {
 
   const filtered = professionals.filter((c) => {
     const q = searchQuery.toLowerCase();
-    const matchesSearch = !q || c.name.toLowerCase().includes(q) || c.location.toLowerCase().includes(q);
+    const matchesSearch = !q || c.name.toLowerCase().includes(q) || (c.location && c.location.toLowerCase().includes(q));
     const matchesRating = c.rating >= minRating;
-    const matchesPrice = c.hourlyRate <= priceMax;
-    const matchesCare = careTypes.length === 0 || careTypes.some((ct) => c.specialties.includes(ct));
-    const matchesLocation = selectedLocation === "Todas las ubicaciones" || c.location.toLowerCase().includes(selectedLocation.toLowerCase());
+    const matchesPrice = priceMax >= 100000 ? true : c.hourlyRate <= priceMax;
+    const matchesCare = careTypes.length === 0 || careTypes.some((ct) => c.specialties && c.specialties.includes(ct));
+    const matchesLocation = selectedLocation === "Todas las ubicaciones" || (c.location && c.location.toLowerCase().includes(selectedLocation.toLowerCase()));
     const matchesType = selectedType === "todos" || c.tipo === selectedType;
     return matchesSearch && matchesRating && matchesPrice && matchesCare && matchesLocation && matchesType;
   });
@@ -64,7 +64,7 @@ export default function Directory() {
     return 0;
   });
 
-  const activeFilterCount = careTypes.length + (minRating > 0 ? 1 : 0) + (priceMax < 8000 ? 1 : 0) + (selectedType !== "todos" ? 1 : 0);
+  const activeFilterCount = careTypes.length + (minRating > 0 ? 1 : 0) + (priceMax < 100000 ? 1 : 0) + (selectedType !== "todos" ? 1 : 0);
 
   return (
     <div style={{ backgroundColor: "#f8fbfd", minHeight: "100vh" }}>

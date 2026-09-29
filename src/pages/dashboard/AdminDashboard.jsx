@@ -201,13 +201,12 @@ export default function AdminDashboard() {
                                                         <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700">
                                                             {u.rol}
                                                         </span>
-                                                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                                                            u.estado === "ACTIVO"
+                                                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${u.estado === "ACTIVO"
                                                                 ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
                                                                 : u.estado === "PENDIENTE_VERIFICACION"
-                                                                ? "bg-amber-50 text-amber-700 border border-amber-200"
-                                                                : "bg-red-50 text-red-700 border border-red-200"
-                                                        }`}>
+                                                                    ? "bg-amber-50 text-amber-700 border border-amber-200"
+                                                                    : "bg-red-50 text-red-700 border border-red-200"
+                                                            }`}>
                                                             {u.estado}
                                                         </span>
                                                     </div>

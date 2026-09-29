@@ -1,6 +1,7 @@
 import { useAuth } from '../context/AuthContext';
 import FamiliarDashboard from './dashboard/FamiliarDashboard';
 import AdminDashboard from './dashboard/AdminDashboard';
+import CuidadorDashboard from './dashboard/CuidadorDashboard';
 
 export default function Dashboard() {
     const { user, logout } = useAuth();
@@ -10,6 +11,10 @@ export default function Dashboard() {
 
     if (userRole === 'FAMILIAR') {
         return <FamiliarDashboard />;
+    }
+
+    if (userRole === 'CUIDADOR' || userRole === 'ENFERMERO') {
+        return <CuidadorDashboard />;
     }
 
     if (userRole === 'ADMIN' || userRole === 'ADMINISTRADOR') {

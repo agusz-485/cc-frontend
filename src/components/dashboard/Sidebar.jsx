@@ -2,7 +2,7 @@ import { LayoutDashboard, MessageSquare, Calendar, Users, FileText, Settings, Sh
 import { P } from "../../shared";
 import logoCareConnect from "../../assets/logo_careconnect.png";
 
-export function Sidebar({ active, setActive, navigate, role, setRole, userName }) {
+export function Sidebar({ active, setActive, navigate, role, setRole, userName, badges = {} }) {
     const getSidebarItems = () => {
         if (role === "cuidador") {
             return [
@@ -38,14 +38,14 @@ export function Sidebar({ active, setActive, navigate, role, setRole, userName }
     const UserIcon = Users;
 
     const items = getSidebarItems();
-    const badge = role === "familiar" ? {} : role === "cuidador" ? { solicitudes: 1 } : {};
+    const badge = badges || {};
 
     const getProfileInfo = () => {
         const name = userName || localStorage.getItem("user_name");
         const storedEmail = localStorage.getItem("user_email");
-        if (role === "cuidador") return { name: name || "María González", desc: storedEmail || "Cuidador / Enfermero" };
-        if (role === "administrador") return { name: name || "Admin Principal", desc: storedEmail || "Administrador" };
-        return { name: name || "Familia García", desc: storedEmail || "Cuenta Familiar" };
+        if (role === "cuidador") return { name: name || "Profesional de Cuidado", desc: storedEmail || "Cuidador / Enfermero" };
+        if (role === "administrador") return { name: name || "Administrador", desc: storedEmail || "Panel de Administración" };
+        return { name: name || "Usuario", desc: storedEmail || "Cuenta Familiar" };
     };
 
     const profile = getProfileInfo();
