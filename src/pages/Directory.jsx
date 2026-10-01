@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router";
-import { Search, MapPin, Filter, LayoutDashboard } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Search, MapPin, Filter } from "lucide-react";
 import { P, formatARS } from "../shared";
 import { searchProfessionals } from "../services/searchService";
 import { getFavoriteCaregivers, toggleFavoriteCaregiver } from "../services/favoritesService";
 import { useAuth } from "../context/AuthContext";
+import { Navbar } from "../components/layout/Navbar";
 import { FilterSidebar } from "../components/directory/FilterSidebar";
 import { ProfessionalCard } from "../components/directory/ProfessionalCard";
 
@@ -27,7 +28,7 @@ export default function Directory() {
   const locationOptions = ["Todas las ubicaciones", "Palermo", "Belgrano", "Recoleta", "Almagro", "Caballito", "San Telmo", "Lanús", "Quilmes", "San Isidro"];
   const careTypeOptions = ["Alzheimer", "Parkinson", "Post-operatorio", "Rehabilitación", "Cuidados Paliativos", "Acompañamiento"];
 
-  // Cargar cuidadores desde el servicio de la Célula 3
+  // Cargar cuidadores desde el servicio
   useEffect(() => {
     const fetchList = async () => {
       const data = await searchProfessionals();
@@ -68,8 +69,11 @@ export default function Directory() {
 
   return (
     <div style={{ backgroundColor: "#f8fbfd", minHeight: "100vh" }}>
-      {/* Top Search Bar */}
-      <div className="sticky top-16 z-40 border-b bg-white" style={{ borderColor: P.baseNeutral }}>
+      {/* 1. Header / Navbar Superior con Logo Oficial y Botón de Configuración */}
+      <Navbar />
+
+      {/* 2. Barra de Búsqueda y Filtros Sticky */}
+      <div className="sticky top-16 z-40 border-b bg-white/95 backdrop-blur-md shadow-2xs" style={{ borderColor: P.baseNeutral }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5">
           <div className="flex gap-3 items-center flex-wrap">
             <div className="flex items-center gap-2 flex-1 min-w-52 px-4 py-2.5 rounded-xl border bg-slate-50" style={{ borderColor: P.baseNeutral }}>
@@ -97,7 +101,7 @@ export default function Directory() {
 
             <button 
               onClick={() => setShowFilters(!showFilters)} 
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all hover:bg-slate-100" 
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all hover:bg-slate-100 cursor-pointer" 
               style={{
                 backgroundColor: showFilters ? P.primary : "#f0f4f6",
                 color: showFilters ? "white" : P.dark,
@@ -123,14 +127,6 @@ export default function Directory() {
               <option value="price_asc">Precio: menor a mayor</option>
               <option value="price_desc">Precio: mayor a menor</option>
             </select>
-
-            <button 
-              onClick={() => navigate("/dashboard")} 
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm text-white transition-all hover:opacity-90 active:scale-95 ml-auto bg-amber-500"
-            >
-              <LayoutDashboard className="w-4 h-4" />
-              Volver al Panel
-            </button>
           </div>
         </div>
       </div>
