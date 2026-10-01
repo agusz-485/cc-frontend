@@ -1,11 +1,10 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, MapPin, Filter, User } from "lucide-react";
+import { Search, MapPin, Filter } from "lucide-react";
 import { P, formatARS } from "../shared";
 import { searchProfessionals } from "../services/searchService";
 import { getFavoriteCaregivers, toggleFavoriteCaregiver } from "../services/favoritesService";
 import { useAuth } from "../context/AuthContext";
-import { getMediaUrl } from "../api/client";
 import { Navbar } from "../components/layout/Navbar";
 import { FilterSidebar } from "../components/directory/FilterSidebar";
 import { ProfessionalCard } from "../components/directory/ProfessionalCard";
@@ -67,11 +66,10 @@ export default function Directory() {
   });
 
   const activeFilterCount = careTypes.length + (minRating > 0 ? 1 : 0) + (priceMax < 100000 ? 1 : 0) + (selectedType !== "todos" ? 1 : 0);
-  const userFoto = user?.fotoPerfil || user?.foto || localStorage.getItem("user_foto") || localStorage.getItem("user_foto_perfil");
 
   return (
     <div style={{ backgroundColor: "#f8fbfd", minHeight: "100vh" }}>
-      {/* 1. Header / Navbar Superior con Logo Oficial */}
+      {/* 1. Header / Navbar Superior con Logo Oficial y Botón de Configuración */}
       <Navbar />
 
       {/* 2. Barra de Búsqueda y Filtros Sticky */}
@@ -129,29 +127,6 @@ export default function Directory() {
               <option value="price_asc">Precio: menor a mayor</option>
               <option value="price_desc">Precio: mayor a menor</option>
             </select>
-
-            {/* Sustitución del botón Volver al Panel por Icono de Perfil + Configuración */}
-            <button 
-              onClick={() => navigate("/dashboard?tab=settings")} 
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 transition-all active:scale-95 ml-auto cursor-pointer shadow-2xs"
-              title="Configuración de Cuenta"
-            >
-              <div className="w-5 h-5 rounded-full overflow-hidden flex items-center justify-center bg-slate-200 flex-shrink-0">
-                {userFoto ? (
-                  <img
-                    src={getMediaUrl(userFoto)}
-                    alt="Perfil"
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      e.currentTarget.style.display = "none";
-                      e.currentTarget.nextElementSibling?.classList.remove("hidden");
-                    }}
-                  />
-                ) : null}
-                <User className={`w-3.5 h-3.5 text-slate-600 ${userFoto ? "hidden" : ""}`} />
-              </div>
-              <span>Configuración</span>
-            </button>
           </div>
         </div>
       </div>

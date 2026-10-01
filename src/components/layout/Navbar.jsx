@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { User, Settings, LayoutDashboard, LogOut } from "lucide-react";
+import { User } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import logoCareConnect from "../../assets/logo_careconnect.png";
 import { getMediaUrl } from "../../api/client";
@@ -8,7 +8,7 @@ import { P } from "../../shared";
 
 export const Navbar = () => {
   const navigate = useNavigate();
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, isAuthenticated } = useAuth();
 
   const token = localStorage.getItem("token");
   const isUserLoggedIn = isAuthenticated || Boolean(token);
@@ -35,18 +35,8 @@ export const Navbar = () => {
         {/* Acciones de Navegación */}
         <div className="flex items-center gap-3 sm:gap-4">
           {isUserLoggedIn ? (
-            <div className="flex items-center gap-2 sm:gap-3">
-              {/* Botón Acceso Rápido al Dashboard */}
-              <button
-                type="button"
-                onClick={() => navigate("/dashboard")}
-                className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-100 hover:text-slate-900 transition-all cursor-pointer"
-              >
-                <LayoutDashboard className="w-4 h-4 text-slate-500" />
-                <span>Panel</span>
-              </button>
-
-              {/* Botón Perfil con Texto Configuración */}
+            <div className="flex items-center">
+              {/* Único botón: Icono de Perfil con Texto Configuración */}
               <button
                 type="button"
                 onClick={() => navigate("/dashboard?tab=settings")}
