@@ -10,6 +10,9 @@ export function BookingModalFooter({
   isSubmitting,
   selectedDaysCount,
   selectedSeniorId,
+  isAuthenticated = true,
+  isProfessional = false,
+  onLoginRedirect,
 }) {
   return (
     <div
@@ -49,25 +52,45 @@ export function BookingModalFooter({
             >
               Cancelar
             </button>
-            <button
-              type="button"
-              onClick={onConfirmBooking}
-              disabled={isSubmitting || selectedDaysCount === 0 || !selectedSeniorId}
-              className="px-6 py-2.5 rounded-xl font-bold text-xs text-white flex items-center gap-2 hover:opacity-90 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-              style={{ backgroundColor: P.accent }}
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Procesando...
-                </>
-              ) : (
-                <>
-                  Confirmar Contratación
-                  <ArrowRight className="w-4 h-4" />
-                </>
-              )}
-            </button>
+            {!isAuthenticated ? (
+              <button
+                type="button"
+                onClick={onLoginRedirect}
+                className="px-6 py-2.5 rounded-xl font-bold text-xs text-white flex items-center gap-2 hover:opacity-90 active:scale-95 transition-all cursor-pointer"
+                style={{ backgroundColor: P.primary }}
+              >
+                Iniciar Sesión para Reservar
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            ) : isProfessional ? (
+              <button
+                type="button"
+                disabled
+                className="px-6 py-2.5 rounded-xl font-bold text-xs text-slate-400 bg-slate-200 cursor-not-allowed"
+              >
+                Requiere cuenta Familiar
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={onConfirmBooking}
+                disabled={isSubmitting || selectedDaysCount === 0 || !selectedSeniorId}
+                className="px-6 py-2.5 rounded-xl font-bold text-xs text-white flex items-center gap-2 hover:opacity-90 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                style={{ backgroundColor: P.accent }}
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Procesando...
+                  </>
+                ) : (
+                  <>
+                    Confirmar Contratación
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
+              </button>
+            )}
           </div>
         </>
       )}

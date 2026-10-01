@@ -1,6 +1,7 @@
 import React from "react";
 import { Calendar } from "lucide-react";
 import { P } from "../../shared";
+import { UserAvatar } from "../ui/UserAvatar";
 
 export function BookingCaregiverCard({ caregiver, datesText, selectedDaysCount }) {
   if (!caregiver) return null;
@@ -10,10 +11,13 @@ export function BookingCaregiverCard({ caregiver, datesText, selectedDaysCount }
       className="p-4 rounded-2xl flex items-center gap-4"
       style={{ backgroundColor: P.neutralLight, border: `1px solid ${P.baseNeutral}` }}
     >
-      <img
+      <UserAvatar
         src={caregiver.image}
-        alt={caregiver.name}
-        className="w-14 h-14 rounded-2xl object-cover flex-shrink-0"
+        name={caregiver.name}
+        tipo={caregiver.tipo}
+        size="md"
+        shape="rounded-2xl"
+        className="w-14 h-14"
       />
       <div className="flex-1 min-w-0">
         <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-sky-100 text-sky-800">

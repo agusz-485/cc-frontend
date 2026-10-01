@@ -1,13 +1,21 @@
 import { MapPin, Heart } from "lucide-react";
 import { P, formatARS } from "../../shared";
+import { UserAvatar } from "../ui/UserAvatar";
 
 export function ProfessionalCard({ caregiver, onSelect, isFavorite = false, onToggleFavorite }) {
   return (
     <div className="rounded-2xl overflow-hidden bg-white border transition-all hover:-translate-y-1.5 shadow-sm hover:shadow-md relative group" style={{ borderColor: P.baseNeutral }}>
       {/* Card image */}
       <div className="relative h-44 bg-slate-100">
-        <img src={caregiver.image} alt={caregiver.name} className="w-full h-full object-cover"/>
-        <div className="absolute top-3 left-3 right-3 flex items-start justify-between pointer-events-none">
+        <UserAvatar
+          src={caregiver.image}
+          name={caregiver.name}
+          tipo={caregiver.tipo}
+          size="card"
+          shape="rounded-none"
+          className="w-full h-full"
+        />
+        <div className="absolute top-3 left-3 right-3 flex items-start justify-between pointer-events-none z-10">
           <button
             type="button"
             onClick={(e) => {

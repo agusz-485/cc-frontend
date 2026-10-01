@@ -18,9 +18,22 @@ export function AdultoMayorCard({ senior, onViewClinicalHistory }) {
     <div className="bg-white rounded-3xl p-6 border shadow-sm flex flex-col justify-between" style={{ borderColor: P.baseNeutral }}>
       <div>
         <div className="flex justify-between items-start mb-4">
-          <div>
-            <h3 className="font-extrabold text-base" style={{ color: P.dark }}>{senior.nombre} {senior.apellido}</h3>
-            <p className="text-xs text-slate-400">DNI: {senior.dni}</p>
+          <div className="flex items-center gap-3">
+            {senior.foto || senior.fotoPerfil ? (
+              <img
+                src={senior.foto || senior.fotoPerfil}
+                alt={senior.nombre}
+                className="w-11 h-11 rounded-2xl object-cover border border-slate-200 shadow-sm flex-shrink-0"
+              />
+            ) : (
+              <div className="w-11 h-11 rounded-2xl bg-sky-100 text-sky-700 font-bold flex items-center justify-center text-sm flex-shrink-0">
+                {senior.nombre?.[0] || "A"}{senior.apellido?.[0] || ""}
+              </div>
+            )}
+            <div>
+              <h3 className="font-extrabold text-base" style={{ color: P.dark }}>{senior.nombre} {senior.apellido}</h3>
+              <p className="text-xs text-slate-400">DNI: {senior.dni}</p>
+            </div>
           </div>
           <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider" style={{
             backgroundColor: senior.activo ? "#e8f6ee" : "#fde8e8",

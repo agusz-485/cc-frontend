@@ -21,9 +21,17 @@ export function SeniorDetailSidebar({ selectedSenior }) {
     return (
         <div className="bg-white rounded-3xl p-6 border shadow-sm space-y-4 text-left" style={{ borderColor: P.baseNeutral }}>
             <div className="text-center pb-4 border-b" style={{ borderColor: P.baseNeutral }}>
-                <div className="w-16 h-16 rounded-full bg-sky-100 text-sky-700 font-extrabold text-2xl flex items-center justify-center mx-auto mb-3 shadow-inner">
-                    {initialLetter1}{initialLetter2}
-                </div>
+                {selectedSenior.foto || selectedSenior.fotoPerfil ? (
+                    <img
+                        src={selectedSenior.foto || selectedSenior.fotoPerfil}
+                        alt={selectedSenior.nombre}
+                        className="w-16 h-16 rounded-full object-cover mx-auto mb-3 shadow-sm border border-slate-200"
+                    />
+                ) : (
+                    <div className="w-16 h-16 rounded-full bg-sky-100 text-sky-700 font-extrabold text-2xl flex items-center justify-center mx-auto mb-3 shadow-inner">
+                        {initialLetter1}{initialLetter2}
+                    </div>
+                )}
                 <h4 className="font-extrabold text-base" style={{ color: P.dark }}>
                     {selectedSenior.nombre} {selectedSenior.apellido || ""}
                 </h4>

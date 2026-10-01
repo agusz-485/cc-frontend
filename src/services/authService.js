@@ -21,6 +21,10 @@ export const authService = {
         }
         try {
             const response = await api.get('/auth/me');
+            if (response.data?.fotoPerfil) {
+                localStorage.setItem("user_foto", response.data.fotoPerfil);
+                localStorage.setItem("user_foto_perfil", response.data.fotoPerfil);
+            }
             return response.data;
         } catch (err) {
             // Si el backend responde 404 (endpoint no disponible), usar datos de sesión activa
@@ -39,6 +43,7 @@ export const authService = {
                     apellido: sessionUser.apellido || '',
                     email: sessionUser.email || localStorage.getItem('user_email') || '',
                     telefono: sessionUser.telefono || localStorage.getItem('user_phone') || '',
+                    fotoPerfil: sessionUser.fotoPerfil || localStorage.getItem('user_foto') || '',
                     direccion: sessionUser.direccion || localStorage.getItem('user_address') || '',
                     provincia: sessionUser.provincia || localStorage.getItem('user_province') || '',
                     ciudad: sessionUser.ciudad || localStorage.getItem('user_city') || '',
@@ -51,6 +56,11 @@ export const authService = {
         }
     },
     updateProfile: async (userData) => {
+        if (userData?.fotoPerfil || userData?.foto) {
+            const f = userData.fotoPerfil || userData.foto;
+            localStorage.setItem("user_foto", f);
+            localStorage.setItem("user_foto_perfil", f);
+        }
         if (localStorage.getItem('token') === 'mock-bypass-token') {
             return {
                 ...userData,
@@ -61,11 +71,19 @@ export const authService = {
         }
         try {
             const response = await api.put('/auth/me', userData);
+            if (response.data?.fotoPerfil) {
+                localStorage.setItem("user_foto", response.data.fotoPerfil);
+                localStorage.setItem("user_foto_perfil", response.data.fotoPerfil);
+            }
             return response.data;
         } catch (err) {
             if (err.response && (err.response.status === 404 || err.response.status === 405)) {
                 try {
                     const patchRes = await api.patch('/auth/me', userData);
+                    if (patchRes.data?.fotoPerfil) {
+                        localStorage.setItem("user_foto", patchRes.data.fotoPerfil);
+                        localStorage.setItem("user_foto_perfil", patchRes.data.fotoPerfil);
+                    }
                     return patchRes.data;
                 } catch {
                     console.warn('Backend sin endpoint de actualización de perfil /auth/me (404/405). Guardando localmente.');

@@ -1,10 +1,9 @@
 import { useState } from "react";
-import { User, Wallet, Bell, Shield } from "lucide-react";
+import { User, Wallet, Shield } from "lucide-react";
 import { P } from "../../shared";
 import {
     CuidadorProfileTab,
     CuidadorPayoutTab,
-    CuidadorNotificationsTab,
     CuidadorSecurityTab
 } from "../cuidador";
 import { useAuth } from "../../context/AuthContext";
@@ -18,7 +17,6 @@ export function SectionSettingsCuidador({ onProfileUpdate, role = "cuidador" }) 
     const tabsConfig = [
         { id: "profile", label: "Perfil Personal", icon: User },
         { id: "payment", label: "Datos de Cobro", icon: Wallet },
-        { id: "notifications", label: "Notificaciones", icon: Bell },
         { id: "security", label: "Seguridad", icon: Shield },
     ];
 
@@ -59,7 +57,6 @@ export function SectionSettingsCuidador({ onProfileUpdate, role = "cuidador" }) 
                 {/* Tab content */}
                 {tab === "profile" && <CuidadorProfileTab onProfileUpdate={onProfileUpdate} role={role} />}
                 {tab === "payment" && <CuidadorPayoutTab />}
-                {tab === "notifications" && <CuidadorNotificationsTab />}
                 {tab === "security" && <CuidadorSecurityTab />}
             </div>
         </div>

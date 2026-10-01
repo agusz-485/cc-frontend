@@ -24,6 +24,7 @@ export function SectionPerfilProfesional({ caregiverData, setCaregiverData, onSa
     const [newCertTitle, setNewCertTitle] = useState("");
     const [newCertIssuer, setNewCertIssuer] = useState("");
     const [newCertDate, setNewCertDate] = useState("");
+    const [newCertFile, setNewCertFile] = useState("");
 
     const [saveSuccess, setSaveSuccess] = useState(false);
     const [saveError, setSaveError] = useState("");
@@ -78,12 +79,15 @@ export function SectionPerfilProfesional({ caregiverData, setCaregiverData, onSa
             title: newCertTitle,
             issuer: newCertIssuer,
             active: true,
-            validUntil: newCertDate || "2028-12-31"
+            validUntil: newCertDate || "2028-12-31",
+            fileUrl: newCertFile || "",
+            archivoUrl: newCertFile || "",
         };
         setCerts([...certs, newCert]);
         setNewCertTitle("");
         setNewCertIssuer("");
         setNewCertDate("");
+        setNewCertFile("");
     };
 
     const deleteCert = (id) => {
@@ -110,47 +114,23 @@ export function SectionPerfilProfesional({ caregiverData, setCaregiverData, onSa
         }
     };
 
-    const handleSave = () => {
-        const updatedData = {
-            ...caregiverData,
-            professionalType,
-            matricula: professionalType === "enfermero" ? matricula : "",
-            experience,
-            price,
-            bio,
-            mainZone,
-            coverageZones: professionalType === "cuidador" ? coverageZones : [],
-            selectedSpecs: professionalType === "cuidador" ? selectedSpecs : [],
-            certs: professionalType === "cuidador" ? certs : []
-        };
-        executeSave(updatedData);
-    };
+    const buildProfilePayload = (extra = {}) => ({
+        ...caregiverData,
+        professionalType,
+        matricula: professionalType === "enfermero" ? matricula : "",
+        experience,
+        price,
+        bio,
+        mainZone,
+        coverageZones: professionalType === "cuidador" ? coverageZones : [],
+        selectedSpecs: professionalType === "cuidador" ? selectedSpecs : [],
+        certs: professionalType === "cuidador" ? certs : [],
+        ...extra
+    });
 
-    const handlePublish = () => {
-        if (!isProfileCompletable) return;
-        const updatedData = {
-            ...caregiverData,
-            professionalType,
-            matricula: professionalType === "enfermero" ? matricula : "",
-            experience,
-            price,
-            bio,
-            mainZone,
-            coverageZones: professionalType === "cuidador" ? coverageZones : [],
-            selectedSpecs: professionalType === "cuidador" ? selectedSpecs : [],
-            certs: professionalType === "cuidador" ? certs : [],
-            visible: true
-        };
-        executeSave(updatedData);
-    };
-
-    const handleUnpublish = () => {
-        const updatedData = {
-            ...caregiverData,
-            visible: false
-        };
-        executeSave(updatedData);
-    };
+    const handleSave = () => executeSave(buildProfilePayload());
+    const handlePublish = () => isProfileCompletable && executeSave(buildProfilePayload({ visible: true }));
+    const handleUnpublish = () => executeSave({ ...caregiverData, visible: false });
 
     return (
         <div className="flex-1 overflow-y-auto p-6" style={{ backgroundColor: "#f8fbfd" }}>
@@ -215,6 +195,8 @@ export function SectionPerfilProfesional({ caregiverData, setCaregiverData, onSa
                                     setNewCertIssuer={setNewCertIssuer}
                                     newCertDate={newCertDate}
                                     setNewCertDate={setNewCertDate}
+                                    newCertFile={newCertFile}
+                                    setNewCertFile={setNewCertFile}
                                 />
                             </>
                         )}

@@ -9,8 +9,25 @@ export function AdultoMayorFormModal({ isOpen, onClose, onSubmit }) {
   const [fechaNacimiento, setFechaNacimiento] = useState("1944-05-12");
   const [movilidad, setMovilidad] = useState("Autónomo");
   const [observaciones, setObservaciones] = useState("");
+  const [foto, setFoto] = useState("");
+  const [uploading, setUploading] = useState(false);
 
   if (!isOpen) return null;
+
+  const handlePhotoChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const reader = new FileReader();
+      reader.onload = () => setFoto(reader.result);
+      reader.readAsDataURL(file);
+    } catch (err) {
+      console.warn("Error leyendo imagen:", err);
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -23,12 +40,14 @@ export function AdultoMayorFormModal({ isOpen, onClose, onSubmit }) {
       fechaNacimiento,
       movilidad,
       observaciones,
+      foto: foto || undefined,
       activo: true
     });
 
     setNombre("");
     setApellido("");
     setDni("");
+    setFoto("");
     setFechaNacimiento("1944-05-12");
     setMovilidad("Autónomo");
     setObservaciones("");
@@ -77,7 +96,25 @@ export function AdultoMayorFormModal({ isOpen, onClose, onSubmit }) {
           </div>
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider mb-1.5" style={{ color: P.dark }}>Observaciones clínicas generales</label>
-            <textarea value={observaciones} onChange={e => setObservaciones(e.target.value)} placeholder="Alergias, cuidados alimentarios particulares, recomendaciones físicas..." rows={3} className="w-full px-3.5 py-2.5 rounded-xl text-xs border outline-none resize-none bg-white focus:border-slate-400" style={{ borderColor: P.baseNeutral }} />
+            <textarea value={observaciones} onChange={e => setObservaciones(e.target.value)} placeholder="Alergias, cuidados alimentarios particulares, recomendaciones físicas..." rows={2} className="w-full px-3.5 py-2.5 rounded-xl text-xs border outline-none resize-none bg-white focus:border-slate-400" style={{ borderColor: P.baseNeutral }} />
+          </div>
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-wider mb-1.5" style={{ color: P.dark }}>Foto de Perfil del Paciente (Opcional)</label>
+            <div className="flex items-center gap-3">
+              {foto ? (
+                <img src={foto} alt="Preview" className="w-10 h-10 rounded-xl object-cover border border-slate-200" />
+              ) : (
+                <div className="w-10 h-10 rounded-xl bg-slate-100 border flex items-center justify-center text-slate-400 text-xs font-bold">
+                  +
+                </div>
+              )}
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handlePhotoChange}
+                className="text-xs text-slate-500 file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-sky-50 file:text-sky-700 hover:file:bg-sky-100 cursor-pointer"
+              />
+            </div>
           </div>
           <div className="flex justify-end gap-2 pt-2">
             <button type="button" onClick={onClose} className="px-4 py-2 border text-xs rounded-xl font-bold text-slate-500 hover:bg-slate-50 transition-colors" style={{ borderColor: P.baseNeutral }}>Cancelar</button>

@@ -29,9 +29,7 @@ export const toggleFavoriteCaregiver = (caregiver, userId) => {
     const normalized = {
       id: caregiver.id,
       name: caregiver.name,
-      image:
-        caregiver.image ||
-        "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=300&h=300&fit=crop&auto=format",
+      image: caregiver.image || caregiver.fotoPerfil || null,
       location: caregiver.location || "Buenos Aires",
       rating: caregiver.rating || 4.9,
       reviews: caregiver.reviews || 0,

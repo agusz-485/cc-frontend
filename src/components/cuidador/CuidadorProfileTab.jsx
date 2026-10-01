@@ -18,6 +18,7 @@ export function CuidadorProfileTab({ onProfileUpdate, role }) {
     const [email, setEmail] = useState("");
     const [telefono, setTelefono] = useState("");
     const [dni, setDni] = useState("");
+    const [fotoPerfil, setFotoPerfil] = useState("");
     const [direccion, setDireccion] = useState("");
     const [provincia, setProvincia] = useState("");
     const [ciudad, setCiudad] = useState("");
@@ -50,6 +51,7 @@ export function CuidadorProfileTab({ onProfileUpdate, role }) {
             setEmail(userData.email || localProfile.email || localStorage.getItem("user_email") || "");
             setTelefono(userData.telefono || userData.phone || localProfile.telefono || localStorage.getItem("user_phone") || "");
             setDni(userData.dni || localProfile.dni || localStorage.getItem("user_dni") || "");
+            setFotoPerfil(userData.fotoPerfil || userData.fotoUrl || localProfile.fotoPerfil || localStorage.getItem("user_foto_perfil") || "");
             setDireccion(userData.direccion || userData.address || localProfile.direccion || localStorage.getItem("user_address") || "");
             setProvincia(userData.provincia || userData.province || localProfile.provincia || localStorage.getItem("user_province") || "");
             setCiudad(userData.ciudad || userData.city || localProfile.ciudad || localStorage.getItem("user_city") || "");
@@ -77,6 +79,8 @@ export function CuidadorProfileTab({ onProfileUpdate, role }) {
             email,
             telefono,
             dni,
+            fotoPerfil,
+            fotoUrl: fotoPerfil,
             direccion,
             provincia,
             ciudad,
@@ -92,22 +96,15 @@ export function CuidadorProfileTab({ onProfileUpdate, role }) {
             console.warn("No se pudo persistir en /auth/me, guardando localmente:", err);
         }
 
-        localStorage.setItem(`user_profile_${userId}`, JSON.stringify(payload));
-        localStorage.setItem("user_name", nombre);
-        localStorage.setItem("user_email", email);
-        localStorage.setItem("user_phone", telefono);
-        localStorage.setItem("user_dni", dni);
-        localStorage.setItem("user_address", direccion);
-        localStorage.setItem("user_province", provincia);
-        localStorage.setItem("user_city", ciudad);
-        localStorage.setItem("user_cp", cp);
-        localStorage.setItem("user_bio_personal", bioPersonal);
-        localStorage.setItem("user_disp_contacto", disponibilidadContacto);
-
-        if (onProfileUpdate) {
-            onProfileUpdate(nombre);
-        }
-
+        const storageMap = {
+            [`user_profile_${userId}`]: JSON.stringify(payload),
+            user_name: nombre, user_email: email, user_phone: telefono, user_dni: dni,
+            user_foto_perfil: fotoPerfil, user_address: direccion, user_province: provincia,
+            user_city: ciudad, user_cp: cp, user_bio_personal: bioPersonal,
+            user_disp_contacto: disponibilidadContacto,
+        };
+        Object.entries(storageMap).forEach(([k, v]) => localStorage.setItem(k, v || ""));
+        if (onProfileUpdate) onProfileUpdate(nombre);
         setSaveState("saved");
         setTimeout(() => setSaveState("normal"), 2000);
     };
@@ -127,11 +124,7 @@ export function CuidadorProfileTab({ onProfileUpdate, role }) {
                 <AlertCircle className="w-10 h-10 text-rose-500 mb-3" />
                 <p className="font-bold text-slate-800 mb-1">Error al obtener el perfil</p>
                 <p className="text-xs text-slate-500 mb-4">{error}</p>
-                <button
-                    onClick={loadProfile}
-                    className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white cursor-pointer hover:opacity-90"
-                    style={{ backgroundColor: P.primary }}
-                >
+                <button onClick={loadProfile} className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white cursor-pointer hover:opacity-90" style={{ backgroundColor: P.primary }}>
                     <RefreshCw className="w-4 h-4" /> Reintentar
                 </button>
             </div>
@@ -140,7 +133,26 @@ export function CuidadorProfileTab({ onProfileUpdate, role }) {
 
     return (
         <div className="rounded-2xl p-6 bg-white border" style={{ borderColor: P.baseNeutral }}>
-            <CuidadorProfileHeader nombre={nombre} email={email} isEnfermero={isEnfermero} />
+            <CuidadorProfileHeader
+                nombre={nombre}
+                email={email}
+                isEnfermero={isEnfermero}
+                fotoPerfil={fotoPerfil}
+                onFotoChange={async (url) => {
+                    setFotoPerfil(url);
+                    localStorage.setItem("user_foto_perfil", url);
+                    try {
+                        const uid = user?.id || localStorage.getItem("user_id");
+                        if (uid && uid !== "current") {
+                            const endpoint = isEnfermero ? `/enfermeros/${uid}` : `/cuidadores/${uid}`;
+                            await api.put(endpoint, { fotoPerfil: url }).catch(() => null);
+                        }
+                        await authService.updateProfile({ fotoPerfil: url }).catch(() => null);
+                    } catch (e) {
+                        console.warn("No se pudo guardar la foto de perfil en el backend:", e);
+                    }
+                }}
+            />
 
             {/* Formulario */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
@@ -203,32 +215,14 @@ export function CuidadorProfileTab({ onProfileUpdate, role }) {
                 />
             </div>
 
-            <div className="mt-5 pt-5 border-t text-left" style={{ borderColor: P.baseNeutral }}>
-                <div className="mb-4">
-                    <label className="block text-xs font-semibold mb-1.5" style={{ color: P.neutralDark }}>
-                        Horario preferido para coordinación de contacto y llamados
-                    </label>
-                    <input
-                        type="text"
-                        value={disponibilidadContacto}
-                        onChange={e => setDisponibilidadContacto(e.target.value)}
-                        placeholder="Ej. Lunes a Viernes de 8:00 a 19:00 hs"
-                        className="w-full px-3.5 py-2.5 rounded-xl text-sm outline-none border bg-white focus:border-blue-500"
-                        style={{ borderColor: P.baseNeutral, color: P.dark }}
-                    />
+            <div className="mt-5 pt-5 border-t text-left space-y-4" style={{ borderColor: P.baseNeutral }}>
+                <div>
+                    <label className="block text-xs font-semibold mb-1.5" style={{ color: P.neutralDark }}>Horario preferido para coordinación</label>
+                    <input type="text" value={disponibilidadContacto} onChange={e => setDisponibilidadContacto(e.target.value)} placeholder="Ej. Lunes a Viernes de 8:00 a 19:00 hs" className="w-full px-3.5 py-2.5 rounded-xl text-sm outline-none border bg-white focus:border-blue-500" style={{ borderColor: P.baseNeutral, color: P.dark }} />
                 </div>
                 <div>
-                    <label className="block text-xs font-semibold mb-1.5" style={{ color: P.neutralDark }}>
-                        Resumen / Nota de perfil personal
-                    </label>
-                    <textarea
-                        rows={3}
-                        value={bioPersonal}
-                        onChange={e => setBioPersonal(e.target.value)}
-                        placeholder="Breve presentación sobre tu vocación de cuidado o trayectoria..."
-                        className="w-full px-3.5 py-2.5 rounded-xl text-sm outline-none resize-none border focus:border-blue-500"
-                        style={{ borderColor: P.baseNeutral, color: P.dark }}
-                    />
+                    <label className="block text-xs font-semibold mb-1.5" style={{ color: P.neutralDark }}>Resumen / Nota de perfil personal</label>
+                    <textarea rows={3} value={bioPersonal} onChange={e => setBioPersonal(e.target.value)} placeholder="Breve presentación sobre tu vocación de cuidado o trayectoria..." className="w-full px-3.5 py-2.5 rounded-xl text-sm outline-none resize-none border focus:border-blue-500" style={{ borderColor: P.baseNeutral, color: P.dark }} />
                 </div>
             </div>
 
@@ -237,9 +231,7 @@ export function CuidadorProfileTab({ onProfileUpdate, role }) {
                     onClick={handleSaveProfile}
                     disabled={saveState === "saving"}
                     className="px-6 py-2.5 rounded-xl text-sm font-bold text-white transition-all duration-200 active:scale-[0.98] disabled:opacity-85 cursor-pointer shadow-sm hover:opacity-95"
-                    style={{
-                        backgroundColor: saveState === "saved" ? "#10b981" : (saveState === "saving" ? P.neutralDark : P.primary)
-                    }}
+                    style={{ backgroundColor: saveState === "saved" ? "#10b981" : (saveState === "saving" ? P.neutralDark : P.primary) }}
                 >
                     {saveState === "saving" ? "Guardando..." : (saveState === "saved" ? "¡Datos guardados! ✓" : "Guardar cambios")}
                 </button>

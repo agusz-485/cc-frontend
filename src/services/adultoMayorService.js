@@ -25,6 +25,7 @@ export const getAdultosMayores = async (familiarId) => {
         return {
           ...s,
           idAdultoMayor: id,
+          foto: localDet.foto || s.foto || s.fotoPerfil || undefined,
           condiciones: localDet.condiciones || s.condiciones || [],
           medicamentos: localDet.medicamentos || s.medicamentos || [],
           necesidades: localDet.necesidades || s.necesidades || []
@@ -46,6 +47,7 @@ export const createAdultoMayor = async (payload) => {
     localDetails[id] = {
       ...payload,
       idAdultoMayor: id,
+      foto: payload.foto || undefined,
       condiciones: [],
       medicamentos: [],
       necesidades: []
@@ -55,6 +57,7 @@ export const createAdultoMayor = async (payload) => {
     return {
       ...resData,
       idAdultoMayor: id,
+      foto: payload.foto || undefined,
       condiciones: [],
       medicamentos: [],
       necesidades: []

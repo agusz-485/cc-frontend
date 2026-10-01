@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
-import { Edit, Loader2, AlertCircle, RefreshCw, User } from "lucide-react";
+import { Loader2, AlertCircle, RefreshCw } from "lucide-react";
 import { P } from "../../shared";
 import { authService } from "../../services/authService";
 import { useAuth } from "../../context/AuthContext";
 import { AddressLocationFields } from "../ui/AddressLocationFields";
+import { FamiliarProfileHeader } from "./FamiliarProfileHeader";
 
 export function FamiliarProfileTab({ onProfileUpdate }) {
     const { user } = useAuth();
@@ -14,6 +15,7 @@ export function FamiliarProfileTab({ onProfileUpdate }) {
     const [email, setEmail] = useState("");
     const [telefono, setTelefono] = useState("");
     const [dni, setDni] = useState("");
+    const [fotoPerfil, setFotoPerfil] = useState("");
     const [direccion, setDireccion] = useState("");
     const [provincia, setProvincia] = useState("");
     const [ciudad, setCiudad] = useState("");
@@ -45,6 +47,7 @@ export function FamiliarProfileTab({ onProfileUpdate }) {
             setEmail(userData.email || localProfile.email || localStorage.getItem("user_email") || "");
             setTelefono(userData.telefono || userData.phone || localProfile.telefono || localStorage.getItem("user_phone") || "");
             setDni(userData.dni || localProfile.dni || localStorage.getItem("user_dni") || "");
+            setFotoPerfil(userData.fotoPerfil || userData.fotoUrl || localProfile.fotoPerfil || localStorage.getItem("user_foto_perfil") || "");
             setDireccion(userData.direccion || userData.address || localProfile.direccion || localStorage.getItem("user_address") || "");
             setProvincia(userData.provincia || userData.province || localProfile.provincia || localStorage.getItem("user_province") || "");
             setCiudad(userData.ciudad || userData.city || localProfile.ciudad || localStorage.getItem("user_city") || "");
@@ -71,6 +74,8 @@ export function FamiliarProfileTab({ onProfileUpdate }) {
             email,
             telefono,
             dni,
+            fotoPerfil,
+            fotoUrl: fotoPerfil,
             direccion,
             provincia,
             ciudad,
@@ -90,6 +95,7 @@ export function FamiliarProfileTab({ onProfileUpdate }) {
         localStorage.setItem("user_email", email);
         localStorage.setItem("user_phone", telefono);
         localStorage.setItem("user_dni", dni);
+        localStorage.setItem("user_foto_perfil", fotoPerfil);
         localStorage.setItem("user_address", direccion);
         localStorage.setItem("user_province", provincia);
         localStorage.setItem("user_city", ciudad);
@@ -130,29 +136,22 @@ export function FamiliarProfileTab({ onProfileUpdate }) {
         );
     }
 
-    const avatarInitial = (nombre ? nombre[0] : (email ? email[0] : "F")).toUpperCase();
-
     return (
         <div className="rounded-2xl p-6 bg-white border" style={{ borderColor: P.baseNeutral }}>
-            {/* Header del perfil */}
-            <div className="flex items-center gap-4 mb-6 pb-6 border-b" style={{ borderColor: P.baseNeutral }}>
-                <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-xl font-bold text-white flex-shrink-0" style={{ backgroundColor: P.secondary }}>
-                    {avatarInitial}
-                </div>
-                <div className="text-left flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                        <p className="font-bold text-slate-800 text-base truncate">{nombre || "Familiar"}</p>
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
-                            <User className="w-3.5 h-3.5 text-indigo-600" />
-                            Familiar / Contratante
-                        </span>
-                    </div>
-                    <p className="text-xs text-slate-500 mt-0.5 truncate">{email || "sin-email@email.com"}</p>
-                </div>
-                <button className="hidden sm:flex items-center gap-1.5 px-3.5 py-2 border rounded-xl text-xs font-semibold hover:opacity-80 cursor-pointer" style={{ border: `1px solid ${P.baseNeutral}`, color: P.dark }}>
-                    <Edit className="w-3.5 h-3.5" /> Cambiar foto
-                </button>
-            </div>
+            <FamiliarProfileHeader
+                nombre={nombre}
+                email={email}
+                fotoPerfil={fotoPerfil}
+                onFotoChange={async (url) => {
+                    setFotoPerfil(url);
+                    localStorage.setItem("user_foto_perfil", url);
+                    try {
+                        await authService.updateProfile({ fotoPerfil: url }).catch(() => null);
+                    } catch (e) {
+                        console.warn("No se pudo guardar la foto de perfil en el backend:", e);
+                    }
+                }}
+            />
 
             {/* Formulario */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">

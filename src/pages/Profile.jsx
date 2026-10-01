@@ -78,15 +78,11 @@ export default function Profile() {
     setIsFavorite(fav);
   };
 
-  const blockedDays = useMemo(() => new Set([4, 5, 11, 12, 15, 16, 18, 19, 25, 26]), []);
-  const isPast = (day) => day <= 2;
-
-  const toggleDay = (day) => {
-    if (blockedDays.has(day) || isPast(day)) return;
+  const toggleDay = (dayKey) => {
     setSelectedDays((prev) => {
       const next = new Set(prev);
-      if (next.has(day)) next.delete(day);
-      else next.add(day);
+      if (next.has(dayKey)) next.delete(dayKey);
+      else next.add(dayKey);
       return next;
     });
   };

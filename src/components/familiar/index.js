@@ -1,4 +1,5 @@
 export { FamiliarProfileTab } from "./FamiliarProfileTab";
+export { FamiliarProfileHeader } from "./FamiliarProfileHeader";
 export { FamiliarPaymentTab } from "./FamiliarPaymentTab";
 export { FamiliarNotificationsTab } from "./FamiliarNotificationsTab";
 export { FamiliarSecurityTab } from "./FamiliarSecurityTab";

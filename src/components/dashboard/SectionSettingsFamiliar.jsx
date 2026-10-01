@@ -1,10 +1,9 @@
 import { useState } from "react";
-import { User, CreditCard, Bell, Shield } from "lucide-react";
+import { User, CreditCard, Shield } from "lucide-react";
 import { P } from "../../shared";
 import {
     FamiliarProfileTab,
     FamiliarPaymentTab,
-    FamiliarNotificationsTab,
     FamiliarSecurityTab
 } from "../familiar";
 
@@ -14,7 +13,6 @@ export function SectionSettingsFamiliar({ onProfileUpdate }) {
     const tabsConfig = [
         { id: "profile", label: "Perfil", icon: User },
         { id: "payment", label: "Métodos de Pago", icon: CreditCard },
-        { id: "notifications", label: "Notificaciones", icon: Bell },
         { id: "security", label: "Seguridad", icon: Shield },
     ];
 
@@ -55,7 +53,6 @@ export function SectionSettingsFamiliar({ onProfileUpdate }) {
                 {/* Tab content */}
                 {tab === "profile" && <FamiliarProfileTab onProfileUpdate={onProfileUpdate} />}
                 {tab === "payment" && <FamiliarPaymentTab />}
-                {tab === "notifications" && <FamiliarNotificationsTab />}
                 {tab === "security" && <FamiliarSecurityTab />}
             </div>
         </div>

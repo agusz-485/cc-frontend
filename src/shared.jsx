@@ -20,7 +20,7 @@ export const CAREGIVERS = [
         hourlyRate: 4500, dailyRate: 32000, rating: 4.9, reviews: 47,
         verified: false, available: true,
         tipo: "enfermero",
-        image: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=300&h=300&fit=crop&auto=format",
+        image: null,
         bio: "Enfermera titulada con 12 años de experiencia en cuidado de adultos mayores y enfermedades neurodegenerativas. Especializada en pacientes con Alzheimer y movilidad reducida, con un enfoque cálido, profesional y humanista que pone al paciente y a la familia siempre en el centro.",
         experience: 12,
         certifications: ["Enfermería Geriátrica", "RCP Avanzado", "Cuidados Paliativos"],

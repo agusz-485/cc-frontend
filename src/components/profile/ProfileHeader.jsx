@@ -1,11 +1,10 @@
 import { MapPin, CheckCircle, Heart } from "lucide-react";
 import { P, StarRating, SpecialtyBadge } from "../../shared";
+import { UserAvatar } from "../ui/UserAvatar";
 
 export function ProfileHeader({ caregiver, isFavorite = false, onToggleFavorite }) {
   const specialties = caregiver?.specialties || [];
-  const image =
-    caregiver?.image ||
-    "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=60";
+  const image = caregiver?.image || caregiver?.fotoPerfil || null;
   const location = caregiver?.location || "Argentina";
   const rating = caregiver?.rating ?? 4.8;
   const reviews = caregiver?.reviews ?? 0;
@@ -18,11 +17,12 @@ export function ProfileHeader({ caregiver, isFavorite = false, onToggleFavorite 
     >
       <div className="flex items-start gap-5 flex-col sm:flex-row">
         <div className="relative flex-shrink-0">
-          <img
+          <UserAvatar
             src={image}
-            alt={caregiver?.name || "Profesional"}
-            className="w-28 h-28 rounded-2xl object-cover"
-            style={{ backgroundColor: P.baseNeutral }}
+            name={caregiver?.name || "Profesional"}
+            tipo={caregiver?.tipo}
+            size="xl"
+            shape="rounded-2xl"
           />
         </div>
 

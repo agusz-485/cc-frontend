@@ -1,5 +1,7 @@
-import { Calendar, DollarSign, Clock, Star, CheckCircle, AlertCircle, ArrowUpRight } from "lucide-react";
+import { useState } from "react";
+import { Calendar, DollarSign, Clock, Star, CheckCircle, AlertCircle, ArrowUpRight, FileText } from "lucide-react";
 import { P, formatARS } from "../../shared";
+import { ModalDetallePaciente } from "../cuidador/ModalDetallePaciente";
 
 export function SectionInicioCuidador({
     setActive,
@@ -14,7 +16,9 @@ export function SectionInicioCuidador({
     liquidations = [],
     caregiverData = { certs: [], visible: false }
 }) {
-    const totalWeeklyTurns = requests.filter(r => r.status === "accepted").length;
+    const [selectedRequest, setSelectedRequest] = useState(null);
+
+    const totalWeeklyTurns = requests.filter(r => r.status === "confirmed" || r.status === "accepted").length;
     const totalEarnings = liquidations.reduce((acc, curr) => acc + curr.amount, 0);
 
     const safeStats = {
@@ -32,7 +36,7 @@ export function SectionInicioCuidador({
     ];
 
     return (
-        <div className="flex-1 overflow-y-auto p-6" style={{ backgroundColor: "#f8fbfd" }}>
+        <div className="flex-1 overflow-y-auto p-6 text-left" style={{ backgroundColor: "#f8fbfd" }}>
             <div className="max-w-5xl mx-auto">
                 <div className="mb-6">
                     <h1 className="text-2xl font-bold" style={{ color: P.dark, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
@@ -59,15 +63,15 @@ export function SectionInicioCuidador({
                         </div>
                         <div className="flex-1">
                             <p className="text-sm font-bold text-red-800">⚠️ Perfil Oculto en el Directorio (visible = false)</p>
-                            <p className="text-xs text-red-700">Obligatorio: Completa tus datos en la pestaña <strong>Perfil Profesional</strong> (matrícula, especialidad, precio por hora, etc.) para publicar tu perfil.</p>
+                            <p className="text-xs text-red-700">Obligatorio: Completa tus datos en la pestaña <strong>Perfil Profesional</strong> para publicar tu perfil.</p>
                         </div>
-                        <button onClick={() => setActive("perfil_profesional")} className="px-4 py-2 rounded-xl text-xs font-bold text-white hover:opacity-90 bg-red-600">
+                        <button onClick={() => setActive("perfil_profesional")} className="px-4 py-2 rounded-xl text-xs font-bold text-white hover:opacity-90 bg-red-600 cursor-pointer">
                             Completar Perfil
                         </button>
                     </div>
                 )}
 
-                {/* Estadisticas Card (UML model view) */}
+                {/* Estadisticas Card */}
                 <div className="bg-white rounded-3xl p-5 border mb-6" style={{ borderColor: P.baseNeutral }}>
                     <h3 className="font-bold text-sm mb-4" style={{ color: P.dark, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Estadísticas Consolidadas (Clase Estadistica)</h3>
                     <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 text-center">
@@ -98,15 +102,18 @@ export function SectionInicioCuidador({
                         </div>
                         <div className="flex-1">
                             <p className="text-sm font-bold" style={{ color: P.dark }}>Solicitud de Turno Entrante</p>
-                            <p className="text-xs" style={{ color: P.neutralDark }}>{req.family} · {req.hours} · Estimado: {formatARS(req.amount)}</p>
+                            <p className="text-xs" style={{ color: P.neutralDark }}>{req.family} (Paciente: {req.patient}) · {req.hours} · Honorarios: {formatARS(req.amount)}</p>
                         </div>
+                        <button onClick={() => setSelectedRequest(req)} className="px-3.5 py-2 rounded-xl text-xs font-bold text-sky-800 bg-sky-100 hover:bg-sky-200 cursor-pointer">
+                            Ver Ficha Paciente
+                        </button>
                         <button onClick={() => setActive("solicitudes")} className="px-4 py-2 rounded-xl text-xs font-bold text-white hover:opacity-90 cursor-pointer" style={{ backgroundColor: P.accent }}>
-                            Ver Solicitud
+                            Gestionar
                         </button>
                     </div>
                 ))}
 
-                {/* Stats */}
+                {/* Stats Grid */}
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                     {stats.map(({ icon: Icon, label, value, sub, color }) => (
                         <div key={label} className="rounded-2xl p-4 bg-white border" style={{ borderColor: P.baseNeutral }}>
@@ -123,32 +130,55 @@ export function SectionInicioCuidador({
                     ))}
                 </div>
 
-                {/* Grid */}
+                {/* Grid: Próximos Servicios and Certificados */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
                     {/* Próximos Servicios */}
                     <div className="bg-white rounded-2xl p-5 border" style={{ borderColor: P.baseNeutral }}>
-                        <h3 className="font-bold text-sm mb-4" style={{ color: P.dark }}>Próximos servicios agendados</h3>
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="font-bold text-sm" style={{ color: P.dark }}>Próximos servicios agendados</h3>
+                            <span className="text-[11px] text-slate-400">Toca para ver ficha clínica</span>
+                        </div>
                         <div className="space-y-3">
-                            {requests.filter(r => r.status === "accepted").length === 0 ? (
+                            {requests.filter(r => r.status === "confirmed" || r.status === "accepted").length === 0 ? (
                                 <p className="text-xs italic py-4 text-center text-slate-500">No hay servicios programados</p>
                             ) : (
-                                requests.filter(r => r.status === "accepted").map(req => (
-                                    <div key={req.id} className="flex items-center gap-3 p-3 rounded-xl" style={{ backgroundColor: P.neutralLight }}>
-                                        <div className="w-9 h-9 rounded-full bg-slate-300 flex items-center justify-center font-bold text-sm text-slate-700">
-                                            {req.family[0]}{req.family.split(" ")[1]?.[0] || ""}
-                                        </div>
+                                requests.filter(r => r.status === "confirmed" || r.status === "accepted").map(req => (
+                                    <div
+                                        key={req.id}
+                                        onClick={() => setSelectedRequest(req)}
+                                        className="flex items-center gap-3 p-3 rounded-2xl border border-transparent hover:border-slate-200 transition-all cursor-pointer group"
+                                        style={{ backgroundColor: P.neutralLight }}
+                                    >
+                                        {req.familiarFoto ? (
+                                            <img
+                                                src={req.familiarFoto}
+                                                alt={req.family}
+                                                className="w-10 h-10 rounded-xl object-cover border border-sky-100 flex-shrink-0"
+                                            />
+                                        ) : (
+                                            <div className="w-10 h-10 rounded-xl bg-sky-100 flex items-center justify-center font-bold text-sm text-sky-700 flex-shrink-0">
+                                                {req.family ? req.family[0] : "F"}
+                                            </div>
+                                        )}
                                         <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-semibold truncate" style={{ color: P.dark }}>{req.family} ({req.patient})</p>
-                                            <p className="text-xs" style={{ color: P.neutralDark }}>{req.date} · {req.hours}</p>
+                                            <p className="text-sm font-semibold truncate group-hover:text-sky-700 transition-colors" style={{ color: P.dark }}>
+                                                {req.patient} · <span className="text-xs font-normal text-slate-500">Familiar: {req.family}</span>
+                                            </p>
+                                            <p className="text-xs text-slate-500">{req.date} · {req.hours}</p>
                                         </div>
-                                        <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-green-50 text-green-700">Confirmado</span>
+                                        <div className="flex items-center gap-1.5">
+                                            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                                Confirmado ✓
+                                            </span>
+                                            <FileText className="w-4 h-4 text-slate-400 group-hover:text-sky-600 transition-colors" />
+                                        </div>
                                     </div>
                                 ))
                             )}
                         </div>
                     </div>
 
-                    {/* Certificaciones y reputación */}
+                    {/* Certificaciones */}
                     <div className="bg-white rounded-2xl p-5 border" style={{ borderColor: P.baseNeutral }}>
                         <h3 className="font-bold text-sm mb-4" style={{ color: P.dark }}>Estado de Certificaciones</h3>
                         <div className="space-y-3">
@@ -168,6 +198,17 @@ export function SectionInicioCuidador({
                     </div>
                 </div>
             </div>
+
+            {/* Modal Detalle Paciente */}
+            {selectedRequest && (
+                <ModalDetallePaciente
+                    isOpen={!!selectedRequest}
+                    onClose={() => setSelectedRequest(null)}
+                    request={selectedRequest}
+                />
+            )}
         </div>
     );
 }
+
+export default SectionInicioCuidador;

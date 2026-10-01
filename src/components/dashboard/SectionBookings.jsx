@@ -1,5 +1,6 @@
 import { Calendar, User, ArrowRight, CheckCircle, Ban } from "lucide-react";
 import { P, formatARS } from "../../shared";
+import { UserAvatar } from "../ui/UserAvatar";
 
 export function SectionBookings({ navigate, bookings = [], onStatusChange }) {
   return (
@@ -84,13 +85,12 @@ export function SectionBookings({ navigate, bookings = [], onStatusChange }) {
                       </td>
                       <td className="p-4">
                         <div className="flex items-center gap-3">
-                          <img
-                            src={
-                              b.caregiver?.image ||
-                              "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=100"
-                            }
-                            className="w-9 h-9 rounded-full object-cover flex-shrink-0"
-                            alt={b.caregiver?.name || "Cuidador"}
+                          <UserAvatar
+                            src={b.caregiver?.image}
+                            name={b.caregiver?.name || "Profesional"}
+                            size="sm"
+                            shape="rounded-full"
+                            className="w-9 h-9"
                           />
                           <div>
                             <p className="font-semibold text-xs text-slate-800">
@@ -129,7 +129,7 @@ export function SectionBookings({ navigate, bookings = [], onStatusChange }) {
                       </td>
                       <td className="p-4">
                         <span
-                          className="px-2.5 py-1 rounded-full text-[11px] font-bold"
+                          className="px-2.5 py-1 rounded-full text-[11px] font-bold inline-flex items-center gap-1"
                           style={{
                             backgroundColor:
                               b.status === "confirmed"
@@ -150,42 +150,45 @@ export function SectionBookings({ navigate, bookings = [], onStatusChange }) {
                           }}
                         >
                           {b.status === "confirmed"
-                            ? "Confirmada"
+                            ? "Confirmada ✓"
                             : b.status === "completed"
                             ? "Completada"
                             : b.status === "pending"
-                            ? "Pendiente"
+                            ? "Esperando al Cuidador"
                             : "Cancelada"}
                         </span>
                       </td>
                       <td className="p-4 text-right">
-                        <div className="flex items-center justify-end gap-1.5">
-                          {b.status === "pending" && onStatusChange && (
-                            <>
-                              <button
-                                onClick={() => onStatusChange(b.id, "confirmed")}
-                                className="p-1.5 rounded-lg text-emerald-600 hover:bg-emerald-50 transition-colors"
-                                title="Aceptar y confirmar"
-                              >
-                                <CheckCircle className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={() => onStatusChange(b.id, "cancelled")}
-                                className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 transition-colors"
-                                title="Cancelar reserva"
-                              >
-                                <Ban className="w-4 h-4" />
-                              </button>
-                            </>
+                        <div className="flex items-center justify-end gap-2">
+                          {(b.status === "pending" || b.status === "confirmed") && onStatusChange && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (window.confirm("¿Seguro que deseas cancelar esta reserva?")) {
+                                  onStatusChange(b.id, "cancelled");
+                                }
+                              }}
+                              className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-lg border border-rose-200 text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                              title="Cancelar solicitud"
+                            >
+                              <Ban className="w-3.5 h-3.5" /> Cancelar
+                            </button>
                           )}
                           {b.status === "confirmed" && onStatusChange && (
                             <button
+                              type="button"
                               onClick={() => onStatusChange(b.id, "completed")}
-                              className="text-[11px] font-bold px-2.5 py-1 rounded-lg border text-slate-600 hover:bg-slate-100 transition-colors"
+                              className="text-[11px] font-bold px-2.5 py-1 rounded-lg border text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
                               style={{ borderColor: P.baseNeutral }}
                             >
                               Finalizar
                             </button>
+                          )}
+                          {b.status === "completed" && (
+                            <span className="text-xs text-slate-400 font-medium">Completada</span>
+                          )}
+                          {b.status === "cancelled" && (
+                            <span className="text-xs text-rose-400 font-medium">Cancelada</span>
                           )}
                         </div>
                       </td>

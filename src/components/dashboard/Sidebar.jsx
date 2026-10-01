@@ -43,9 +43,10 @@ export function Sidebar({ active, setActive, navigate, role, setRole, userName, 
     const getProfileInfo = () => {
         const name = userName || localStorage.getItem("user_name");
         const storedEmail = localStorage.getItem("user_email");
-        if (role === "cuidador") return { name: name || "Profesional de Cuidado", desc: storedEmail || "Cuidador / Enfermero" };
-        if (role === "administrador") return { name: name || "Administrador", desc: storedEmail || "Panel de Administración" };
-        return { name: name || "Usuario", desc: storedEmail || "Cuenta Familiar" };
+        const foto = localStorage.getItem("user_foto") || localStorage.getItem("user_foto_perfil");
+        if (role === "cuidador") return { name: name || "Profesional de Cuidado", desc: storedEmail || "Cuidador / Enfermero", foto };
+        if (role === "administrador") return { name: name || "Administrador", desc: storedEmail || "Panel de Administración", foto };
+        return { name: name || "Usuario", desc: storedEmail || "Cuenta Familiar", foto };
     };
 
     const profile = getProfileInfo();
@@ -59,12 +60,16 @@ export function Sidebar({ active, setActive, navigate, role, setRole, userName, 
 
         <div className="px-5 py-4 border-b" style={{ borderColor: "rgba(255,255,255,0.1)" }}>
             <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-white flex-shrink-0" style={{ backgroundColor: role === "administrador" ? P.accent : P.secondary }}>
-                    {profile.name.split(' ').map(n => n[0]).join('')}
-                </div>
-                <div>
+                {profile.foto ? (
+                    <img src={profile.foto} alt={profile.name} className="w-9 h-9 rounded-full object-cover border border-white/20 flex-shrink-0" />
+                ) : (
+                    <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-white flex-shrink-0" style={{ backgroundColor: role === "administrador" ? P.accent : P.secondary }}>
+                        {profile.name.split(' ').map(n => n[0]).join('')}
+                    </div>
+                )}
+                <div className="min-w-0">
                     <p className="text-sm font-semibold text-white truncate max-w-32" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>{profile.name}</p>
-                    <p className="text-xs" style={{ color: "rgba(255,255,255,0.45)" }}>{profile.desc}</p>
+                    <p className="text-xs truncate max-w-32" style={{ color: "rgba(255,255,255,0.45)" }}>{profile.desc}</p>
                 </div>
             </div>
         </div>

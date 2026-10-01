@@ -1,5 +1,6 @@
 import { Star, Heart, Trash2, MapPin, Search } from "lucide-react";
 import { P, formatARS } from "../../shared";
+import { UserAvatar } from "../ui/UserAvatar";
 
 export function SectionCaregivers({ navigate, savedCaregivers = [], onRemoveFavorite }) {
   return (
@@ -59,11 +60,13 @@ export function SectionCaregivers({ navigate, savedCaregivers = [], onRemoveFavo
               >
                 <div>
                   <div className="flex items-start gap-4 mb-3">
-                    <img
+                    <UserAvatar
                       src={c.image}
-                      className="w-16 h-16 rounded-2xl object-cover flex-shrink-0"
-                      alt={c.name}
-                      style={{ backgroundColor: P.baseNeutral }}
+                      name={c.name}
+                      tipo={c.tipo}
+                      size="lg"
+                      shape="rounded-2xl"
+                      className="w-16 h-16"
                     />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between">

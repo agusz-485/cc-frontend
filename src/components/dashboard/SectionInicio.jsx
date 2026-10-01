@@ -1,5 +1,6 @@
 import { Calendar, DollarSign, Users, Star, Clock, ArrowUpRight, ChevronRight, Activity } from "lucide-react";
 import { P, formatARS } from "../../shared";
+import { UserAvatar } from "../ui/UserAvatar";
 
 export function SectionInicio({ setActive, navigate, bookings = [], savedCaregivers = [], activity = [], userName }) {
     const activeBookingsCount = bookings.filter(b => b.status === "confirmed" || b.status === "pending").length;
@@ -83,11 +84,12 @@ export function SectionInicio({ setActive, navigate, bookings = [], savedCaregiv
                             ) : (
                                 bookings.filter(b => b.status === "confirmed" || b.status === "pending").slice(0, 3).map(b => (
                                     <div key={b.id} className="flex items-center gap-3 p-3 rounded-xl" style={{ backgroundColor: P.neutralLight }}>
-                                        <img 
-                                            src={b.caregiver?.image || "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=100"} 
-                                            className="w-9 h-9 rounded-full object-cover flex-shrink-0" 
-                                            alt={b.caregiver?.name} 
-                                            style={{ backgroundColor: P.baseNeutral }} 
+                                        <UserAvatar
+                                            src={b.caregiver?.image}
+                                            name={b.caregiver?.name || "Profesional"}
+                                            size="sm"
+                                            shape="rounded-full"
+                                            className="w-9 h-9"
                                         />
                                         <div className="flex-1 min-w-0">
                                             <p className="text-sm font-semibold truncate text-slate-800">{b.caregiver?.name}</p>

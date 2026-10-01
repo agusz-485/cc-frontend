@@ -1,8 +1,40 @@
 import api from "../api/client";
 
-/**
- * Busca todos los profesionales registrados (Cuidadores y Enfermeros) directamente de la base de datos.
- */
+export const encodeScheduleInDescription = (bio, schedule) => {
+  const cleanBio = (bio || "").replace(/<!--\s*SCHEDULE_DATA:[\s\S]*?-->/g, "").trim();
+  if (!schedule) return cleanBio;
+  return `${cleanBio}\n\n<!-- SCHEDULE_DATA:${JSON.stringify(schedule)} -->`;
+};
+
+export const decodeScheduleFromDescription = (description) => {
+  if (!description || typeof description !== "string") return { bio: "", schedule: null };
+  const match = description.match(/<!--\s*SCHEDULE_DATA:([\s\S]*?)-->/);
+  const cleanBio = description.replace(/<!--\s*SCHEDULE_DATA:[\s\S]*?-->/g, "").trim();
+  if (match && match[1]) {
+    try {
+      return { bio: cleanBio, schedule: JSON.parse(match[1]) };
+    } catch {}
+  }
+  return { bio: cleanBio, schedule: null };
+};
+
+export const saveCaregiverSchedule = async (userId, schedule, role) => {
+  try {
+    localStorage.setItem(`caregiver_schedule_${userId}`, JSON.stringify(schedule));
+    localStorage.setItem("caregiver_schedule", JSON.stringify(schedule));
+    if (!userId || userId === "current") return;
+    const isEnf = role?.toLowerCase()?.includes("enfermero");
+    const endpoint = isEnf ? `/enfermeros/${userId}` : `/cuidadores/${userId}`;
+    const cur = await api.get(endpoint).catch(() => null);
+    if (cur?.data) {
+      const updatedDesc = encodeScheduleInDescription(cur.data.descripcion || "", schedule);
+      await api.put(endpoint, { descripcion: updatedDesc }).catch(() => null);
+    }
+  } catch (e) {
+    console.warn("No se pudo persistir la agenda en el backend:", e);
+  }
+};
+
 export const searchProfessionals = async () => {
   try {
     let caregivers = [];
@@ -12,23 +44,7 @@ export const searchProfessionals = async () => {
         const id = c.id || c.idCuidador;
         const nombreCompleto = `${c.nombre || ""} ${c.apellido || ""}`.trim() || "Cuidador Profesional";
         const rate = Number(c.precioHora) || Number(c.tarifaHora) || 3000;
-
-        let localProfile = {};
-        try {
-          const stored = localStorage.getItem(`caregiver_profile_${id}`);
-          if (stored) localProfile = JSON.parse(stored);
-        } catch {}
-
-        const specialties = (c.especialidades && c.especialidades.length > 0)
-          ? c.especialidades
-          : (localProfile.selectedSpecs || []);
-
-        const coverageZones = (c.zonasCobertura && c.zonasCobertura.length > 0)
-          ? c.zonasCobertura
-          : (localProfile.coverageZones && localProfile.coverageZones.length > 0
-              ? localProfile.coverageZones
-              : (c.zonaPrincipal || localProfile.mainZone ? [c.zonaPrincipal || localProfile.mainZone] : []));
-
+        const { bio: cleanBio } = decodeScheduleFromDescription(c.descripcion);
         return {
           ...c,
           id,
@@ -37,22 +53,17 @@ export const searchProfessionals = async () => {
           reviews: c.totalResenas || 0,
           hourlyRate: rate,
           dailyRate: rate * 8,
-          location: c.zonaPrincipal || localProfile.mainZone || "Argentina",
-          specialties: specialties,
-          coverageZones: coverageZones,
-          certifications: (c.certificaciones && c.certificaciones.length > 0) ? c.certificaciones : (localProfile.certs || []),
-          description: c.descripcion || localProfile.bio || "",
-          verified: c.disponible !== undefined ? c.disponible : (c.visible !== undefined ? c.visible : true),
+          location: c.zonaPrincipal || "Argentina",
+          specialties: c.especialidades || [],
+          coverageZones: c.zonasCobertura || [],
+          certifications: c.certificaciones || [],
+          description: cleanBio,
+          verified: c.disponible !== undefined ? c.disponible : true,
           tipo: "cuidador",
-          image:
-            c.fotoPerfil ||
-            c.fotoUrl ||
-            "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=60",
+          image: c.fotoPerfil || null,
         };
       });
-    } catch (e) {
-      console.warn("No se pudieron obtener cuidadores desde la API:", e);
-    }
+    } catch (e) {}
 
     let nurses = [];
     try {
@@ -61,19 +72,7 @@ export const searchProfessionals = async () => {
         const id = n.id || n.idEnfermero;
         const nombreCompleto = `${n.nombre || ""} ${n.apellido || ""}`.trim() || "Enfermero Matriculado";
         const rate = Number(n.precioHora) || Number(n.tarifaHora) || 4500;
-
-        let localProfile = {};
-        try {
-          const stored = localStorage.getItem(`caregiver_profile_${id}`);
-          if (stored) localProfile = JSON.parse(stored);
-        } catch {}
-
-        const coverageZones = (n.zonasCobertura && n.zonasCobertura.length > 0)
-          ? n.zonasCobertura
-          : (localProfile.coverageZones && localProfile.coverageZones.length > 0
-              ? localProfile.coverageZones
-              : (n.zonaPrincipal || localProfile.mainZone ? [n.zonaPrincipal || localProfile.mainZone] : ["Argentina"]));
-
+        const { bio: cleanBio } = decodeScheduleFromDescription(n.descripcion);
         return {
           ...n,
           id,
@@ -82,34 +81,25 @@ export const searchProfessionals = async () => {
           reviews: n.totalResenas || 0,
           hourlyRate: rate,
           dailyRate: rate * 8,
-          location: n.zonaPrincipal || localProfile.mainZone || "Argentina",
-          matricula: n.matriculaProfesional || localProfile.matricula || "",
+          location: n.zonaPrincipal || "Argentina",
+          matricula: n.matriculaProfesional || "",
           specialties: ["Enfermería General", "Atención Clínica Domiciliaria"],
-          coverageZones: coverageZones,
-          certifications: (n.certificaciones && n.certificaciones.length > 0) ? n.certificaciones : (localProfile.certs || []),
-          description: n.descripcion || localProfile.bio || "",
+          coverageZones: n.zonasCobertura || [],
+          certifications: n.certificaciones || [],
+          description: cleanBio,
           verified: n.visible !== undefined ? n.visible : true,
           tipo: "enfermero",
-          image:
-            n.fotoPerfil ||
-            n.fotoUrl ||
-            "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=60",
+          image: n.fotoPerfil || null,
         };
       });
-    } catch (e) {
-      console.warn("No se pudieron obtener enfermeros desde la API:", e);
-    }
+    } catch (e) {}
 
     return [...caregivers, ...nurses];
   } catch (err) {
-    console.error("Error al buscar profesionales en la base de datos:", err);
     return [];
   }
 };
 
-/**
- * Obtiene el detalle de un profesional por ID consultando el backend y complementando certificados/zonas locales si existen.
- */
 export const getProfessionalById = async (id) => {
   const targetId = Number(id);
   if (!targetId || isNaN(targetId)) return null;
@@ -120,114 +110,103 @@ export const getProfessionalById = async (id) => {
     if (stored) localProfile = JSON.parse(stored);
   } catch {}
 
-  // 1. Intentar buscar en endpoint de cuidadores
+  let localSchedule = null;
+  try {
+    const s = localStorage.getItem(`caregiver_schedule_${targetId}`) || localStorage.getItem("caregiver_schedule");
+    if (s) localSchedule = JSON.parse(s);
+  } catch {}
+
+  let bookedSlots = [];
+  try {
+    const resTurnos = await api.get(`/turnos?cuidadorId=${targetId}`);
+    if (resTurnos?.data && Array.isArray(resTurnos.data)) {
+      bookedSlots = resTurnos.data
+        .filter((t) => t.estadoTurno !== "CANCELADO" && t.estadoTurno !== "RECHAZADO")
+        .map((t) => ({
+          id: `turno-${t.id}`,
+          date: t.fecha ? String(t.fecha) : "",
+          desde: t.horaInicio ? t.horaInicio.slice(0, 5) : "08:00",
+          hasta: t.horaFin ? t.horaFin.slice(0, 5) : "16:00",
+          motivo: `Reserva programada (${t.tipoServicio || "Servicio"})`,
+        }))
+        .filter((s) => s.date);
+    }
+  } catch {}
+
+  const mergeSchedule = (baseSched) => {
+    const s = baseSched || { blockedWeekDays: [], blockedDates: [], blockedWeeklySlots: {}, blockedDateSlots: [] };
+    const dateSlots = [...(Array.isArray(s.blockedDateSlots) ? s.blockedDateSlots : []), ...bookedSlots];
+    return { ...s, blockedDateSlots: dateSlots };
+  };
+
   try {
     const res = await api.get(`/cuidadores/${targetId}`);
     if (res.data) {
       const c = res.data;
-      const rate = Number(c.precioHora) || Number(c.tarifaHora) || 3000;
-      const nombreCompleto = `${c.nombre || ""} ${c.apellido || ""}`.trim() || "Cuidador Profesional";
-      
-      const mergedCerts = (c.certificaciones && c.certificaciones.length > 0)
-        ? c.certificaciones
-        : (localProfile.certs || []);
-
-      const mergedZones = (c.zonasCobertura && c.zonasCobertura.length > 0)
-        ? c.zonasCobertura
-        : (localProfile.coverageZones && localProfile.coverageZones.length > 0
-            ? localProfile.coverageZones
-            : (c.zonaPrincipal || localProfile.mainZone ? [c.zonaPrincipal || localProfile.mainZone] : []));
+      const rate = Number(c.precioHora) || 3000;
+      const { bio: cleanBio, schedule: backendSched } = decodeScheduleFromDescription(c.descripcion);
+      const activeSched = mergeSchedule(backendSched || localSchedule);
+      const mergedCerts = (c.certificaciones && c.certificaciones.length > 0) ? c.certificaciones : (localProfile.certs || []);
+      const mergedZones = (c.zonasCobertura && c.zonasCobertura.length > 0) ? c.zonasCobertura : (localProfile.coverageZones || [c.zonaPrincipal || "Argentina"]);
 
       return {
-        id: c.id || c.idCuidador || targetId,
-        name: nombreCompleto,
+        id: c.id || targetId,
+        name: `${c.nombre || ""} ${c.apellido || ""}`.trim() || "Cuidador Profesional",
         rating: c.calificacionPromedio || 5.0,
         reviews: c.totalResenas || 0,
         hourlyRate: rate,
         dailyRate: rate * 8,
-        location: c.zonaPrincipal || localProfile.mainZone || c.localidad || "Argentina",
-        specialties: (c.especialidades && c.especialidades.length > 0) ? c.especialidades : (localProfile.selectedSpecs || []),
-        bio: c.descripcion || localProfile.bio || "Cuidador profesional con experiencia en asistencia y cuidado integral.",
-        experience: c.aniosExperiencia || c.experienciaAnos || localProfile.experience || 3,
-        image:
-          c.fotoPerfil ||
-          c.fotoUrl ||
-          "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=60",
-        certifications: mergedCerts,
+        location: c.zonaPrincipal || "Argentina",
+        specialties: c.especialidades || [],
+        bio: cleanBio || "Cuidador profesional con experiencia en asistencia y cuidado integral.",
+        experience: c.aniosExperiencia || 3,
+        image: c.fotoPerfil || null,
         coverageZones: mergedZones,
-        verified: c.disponible !== undefined ? c.disponible : (c.visible !== undefined ? c.visible : true),
+        certifications: mergedCerts,
+        schedule: activeSched,
+        verified: c.disponible !== undefined ? c.disponible : true,
         tipo: "cuidador",
       };
     }
   } catch (err) {
-    // Si no es cuidador, intentar endpoint de enfermeros
     try {
       const resN = await api.get(`/enfermeros/${targetId}`);
       if (resN.data) {
         const n = resN.data;
-        const rate = Number(n.precioHora) || Number(n.tarifaHora) || 4500;
-        const nombreCompleto = `${n.nombre || ""} ${n.apellido || ""}`.trim() || "Enfermero Matriculado";
-
-        const mergedCerts = (n.certificaciones && n.certificaciones.length > 0)
-          ? n.certificaciones
-          : (localProfile.certs && localProfile.certs.length > 0
-              ? localProfile.certs
-              : (n.matriculaProfesional || localProfile.matricula
-                  ? [
-                      {
-                        title: "Matrícula Profesional Habilitada",
-                        issuer: `Matrícula: ${n.matriculaProfesional || localProfile.matricula}`,
-                        year: "Vigente",
-                      },
-                    ]
-                  : []));
-
-        const mergedZones = (n.zonasCobertura && n.zonasCobertura.length > 0)
-          ? n.zonasCobertura
-          : (localProfile.coverageZones && localProfile.coverageZones.length > 0
-              ? localProfile.coverageZones
-              : (n.zonaPrincipal || localProfile.mainZone ? [n.zonaPrincipal || localProfile.mainZone] : ["Argentina"]));
+        const rate = Number(n.precioHora) || 4500;
+        const { bio: cleanBio, schedule: backendSched } = decodeScheduleFromDescription(n.descripcion);
+        const activeSched = mergeSchedule(backendSched || localSchedule);
+        const mergedCerts = (n.certificaciones && n.certificaciones.length > 0) ? n.certificaciones : (localProfile.certs || []);
+        const mergedZones = (n.zonasCobertura && n.zonasCobertura.length > 0) ? n.zonasCobertura : (localProfile.coverageZones || [n.zonaPrincipal || "Argentina"]);
 
         return {
-          id: n.id || n.idEnfermero || targetId,
-          name: nombreCompleto,
+          id: n.id || targetId,
+          name: `${n.nombre || ""} ${n.apellido || ""}`.trim() || "Enfermero Matriculado",
           rating: n.calificacionPromedio || 5.0,
           reviews: n.totalResenas || 0,
           hourlyRate: rate,
           dailyRate: rate * 8,
-          location: n.zonaPrincipal || localProfile.mainZone || n.localidad || "Argentina",
-          matricula: n.matriculaProfesional || localProfile.matricula || "",
+          location: n.zonaPrincipal || "Argentina",
+          matricula: n.matriculaProfesional || "",
           specialties: ["Enfermería General", "Atención Clínica Domiciliaria"],
-          bio:
-            n.descripcion ||
-            localProfile.bio ||
-            "Enfermero matriculado capacitado en cuidados clínicos, medicación y atención domiciliaria.",
-          experience: n.aniosExperiencia || n.experienciaAnos || localProfile.experience || 3,
-          image:
-            n.fotoPerfil ||
-            n.fotoUrl ||
-            "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=60",
-          certifications: mergedCerts,
+          bio: cleanBio || "Enfermero matriculado capacitado en atención clínica.",
+          experience: n.aniosExperiencia || 3,
+          image: n.fotoPerfil || null,
           coverageZones: mergedZones,
+          certifications: mergedCerts,
+          schedule: activeSched,
           verified: n.visible !== undefined ? n.visible : true,
           tipo: "enfermero",
         };
       }
-    } catch (e) {
-      console.warn(`No se encontró profesional con ID ${targetId} en cuidadores ni enfermeros:`, e);
-    }
+    } catch (e) {}
   }
-
   return null;
 };
 
-/**
- * Actualiza el perfil profesional de un Cuidador o Enfermero en la base de datos.
- */
 export const updateProfessionalProfile = async (id, role, payload) => {
   const isEnfermero = role?.toUpperCase() === "ENFERMERO" || role === "enfermero";
   const endpoint = isEnfermero ? `/enfermeros/${id}` : `/cuidadores/${id}`;
   const res = await api.put(endpoint, payload);
   return res.data;
 };
-

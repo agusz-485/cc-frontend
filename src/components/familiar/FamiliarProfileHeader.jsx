@@ -1,10 +1,10 @@
 import { useState, useRef } from "react";
-import { Edit, Stethoscope, HeartHandshake, Loader2, Camera } from "lucide-react";
+import { Edit, User, Loader2, Camera } from "lucide-react";
 import { P } from "../../shared";
 import { uploadFile } from "../../services/uploadService";
 
-export function CuidadorProfileHeader({ nombre, email, isEnfermero, fotoPerfil, onFotoChange }) {
-    const avatarInitial = (nombre ? nombre[0] : (email ? email[0] : "P")).toUpperCase();
+export function FamiliarProfileHeader({ nombre, email, fotoPerfil, onFotoChange }) {
+    const avatarInitial = (nombre ? nombre[0] : (email ? email[0] : "F")).toUpperCase();
     const [uploading, setUploading] = useState(false);
     const fileInputRef = useRef(null);
 
@@ -54,7 +54,7 @@ export function CuidadorProfileHeader({ nombre, email, isEnfermero, fotoPerfil, 
                 ) : (
                     <div
                         className="w-16 h-16 rounded-2xl flex items-center justify-center text-xl font-bold text-white flex-shrink-0 shadow-sm"
-                        style={{ backgroundColor: isEnfermero ? "#0d9488" : P.primary }}
+                        style={{ backgroundColor: P.secondary }}
                     >
                         {avatarInitial}
                     </div>
@@ -67,18 +67,11 @@ export function CuidadorProfileHeader({ nombre, email, isEnfermero, fotoPerfil, 
 
             <div className="text-left flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                    <p className="font-bold text-slate-800 text-base truncate">{nombre || "Profesional"}</p>
-                    {isEnfermero ? (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-teal-50 text-teal-700 border border-teal-200">
-                            <Stethoscope className="w-3.5 h-3.5 text-teal-600" />
-                            Enfermero Matriculado
-                        </span>
-                    ) : (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200">
-                            <HeartHandshake className="w-3.5 h-3.5 text-blue-600" />
-                            Cuidador Profesional
-                        </span>
-                    )}
+                    <p className="font-bold text-slate-800 text-base truncate">{nombre || "Familiar"}</p>
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                        <User className="w-3.5 h-3.5 text-indigo-600" />
+                        Familiar / Contratante
+                    </span>
                 </div>
                 <p className="text-xs text-slate-500 mt-0.5 truncate">{email || "sin-email@email.com"}</p>
             </div>
@@ -104,5 +97,4 @@ export function CuidadorProfileHeader({ nombre, email, isEnfermero, fotoPerfil, 
     );
 }
 
-export default CuidadorProfileHeader;
-
+export default FamiliarProfileHeader;
