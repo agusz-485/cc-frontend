@@ -1,75 +1,112 @@
+import FormInput from "../ui/FormInput";
+import FormSelect from "../ui/FormSelect";
+
+const enfermeroFields = [
+    {
+        name: "matriculaProfesional",
+        label: "Matrícula profesional",
+        type: "text",
+        placeholder: "Ingresá tu matrícula",
+        required: true,
+    },
+    {
+        name: "tipoMatricula",
+        label: "Tipo de matrícula",
+        control: "select",
+        required: true,
+        options: [
+            { value: "NACIONAL", label: "Nacional" },
+            { value: "PROVINCIAL", label: "Provincial" },
+        ],
+    },
+    {
+        name: "nivelProfesional",
+        label: "Especialidad / Nivel",
+        type: "text",
+        placeholder: "Ej. Licenciado, Técnico, Auxiliar",
+        required: true,
+    },
+    {
+        name: "institucionEgreso",
+        label: "Institución de egreso",
+        type: "text",
+        placeholder: "Ingresá la institución",
+        required: true,
+    },
+    {
+        name: "seguroMalaPraxis",
+        label: "Seguro de mala praxis",
+        type: "text",
+        placeholder: "Ingresá tu seguro",
+        required: true,
+        fullWidth: true,
+    },
+];
+
+const cuidadorFields = [
+    {
+        name: "zonaPrincipal",
+        label: "Zona donde trabajás",
+        type: "text",
+        placeholder: "Ej. CABA, Zona Norte, etc.",
+        required: true,
+    },
+    {
+        name: "precioHora",
+        label: "Tarifa por hora (ARS)",
+        type: "number",
+        placeholder: "Ej. 2500",
+        min: "0",
+        step: "0.01",
+        required: true,
+    },
+];
+
 export default function RegisterProfessionalForm({
     formData,
-    handleChange
+    handleChange,
+    errors = {},
 }) {
+    const isNurse = formData.rol === "ENFERMERO";
+    const isCaregiver = formData.rol === "CUIDADOR";
+
+    if (!isNurse && !isCaregiver) return null;
+
+    const fields = isNurse ? enfermeroFields : cuidadorFields;
+
     return (
-        <>
-            {formData.rol === "ENFERMERO" && (
-                <>
-                    <input
-                        type="text"
-                        name="matriculaProfesional"
-                        placeholder="Matrícula profesional"
-                        value={formData.matriculaProfesional || ""}
-                        onChange={handleChange}
-                    />
+        <section className="rounded-xl bg-teal-50 p-5">
+            <h2 className="text-lg font-semibold text-gray-900">
+                {isNurse
+                    ? "Información profesional"
+                    : "Información como cuidador"}
+            </h2>
 
-                    <select
-                        name="tipoMatricula"
-                        value={formData.tipoMatricula || ""}
-                        onChange={handleChange}
-                    >
-                        <option value="">Tipo de matrícula</option>
-                        <option value="NACIONAL">Nacional</option>
-                        <option value="PROVINCIAL">Provincial</option>
-                    </select>
+            <p className="mt-1 text-sm text-gray-500">
+                {isNurse
+                    ? "Contanos un poco más sobre tu perfil profesional."
+                    : "Contanos un poco más sobre tu servicio."}
+            </p>
 
-                    <input
-                        type="text"
-                        name="nivelProfesional"
-                        placeholder="Especialidad / Nivel (ej. Licenciado, Técnico, Auxiliar)"
-                        value={formData.nivelProfesional || ""}
-                        onChange={handleChange}
-                    />
+            <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
+                {fields.map(({ fullWidth, control, ...field }) => {
+                    const Component =
+                        control === "select" ? FormSelect : FormInput;
 
-                    <input
-                        type="text"
-                        name="institucionEgreso"
-                        placeholder="Institución de egreso"
-                        value={formData.institucionEgreso || ""}
-                        onChange={handleChange}
-                    />
-
-                    <input
-                        type="text"
-                        name="seguroMalaPraxis"
-                        placeholder="Seguro de mala praxis"
-                        value={formData.seguroMalaPraxis || ""}
-                        onChange={handleChange}
-                    />
-                </>
-            )}
-
-            {formData.rol === "CUIDADOR" && (
-                <>
-                    <input
-                        type="text"
-                        name="zonaPrincipal"
-                        placeholder="Zona"
-                        value={formData.zonaPrincipal || ""}
-                        onChange={handleChange}
-                    />
-
-                    <input
-                        type="number"
-                        name="precioHora"
-                        placeholder="Tarifa por hora ($)"
-                        value={formData.precioHora || ""}
-                        onChange={handleChange}
-                        min="0"
-                    />
-                </>
-            )}
-        </>
+                    return (
+                        <Component
+                            key={field.name}
+                            {...field}
+                            value={formData[field.name] ?? ""}
+                            onChange={handleChange}
+                            error={errors[field.name]}
+                            className={
+                                fullWidth ? "lg:col-span-2" : ""
+                            }
+                        />
+                    );
+                })}
+            </div>
+        </section>
     );
 }
