@@ -5,9 +5,10 @@ import { authService } from "../../services/authService";
 import { useAuth } from "../../context/AuthContext";
 import { AddressLocationFields } from "../ui/AddressLocationFields";
 import { FamiliarProfileHeader } from "./FamiliarProfileHeader";
+import { getMediaUrl } from "../../api/client";
 
 export function FamiliarProfileTab({ onProfileUpdate }) {
-    const { user } = useAuth();
+    const { user, updateUser } = useAuth();
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
@@ -43,11 +44,14 @@ export function FamiliarProfileTab({ onProfileUpdate }) {
                 userDisplayName = `${userDisplayName} ${userData.apellido}`.trim();
             }
 
+            const rawFoto = userData.fotoPerfil || userData.fotoUrl || userData.foto || localProfile.fotoPerfil || localStorage.getItem("user_foto") || localStorage.getItem("user_foto_perfil") || "";
+            const resolvedFoto = getMediaUrl(rawFoto);
+
             setNombre(userDisplayName || "");
             setEmail(userData.email || localProfile.email || localStorage.getItem("user_email") || "");
             setTelefono(userData.telefono || userData.phone || localProfile.telefono || localStorage.getItem("user_phone") || "");
             setDni(userData.dni || localProfile.dni || localStorage.getItem("user_dni") || "");
-            setFotoPerfil(userData.fotoPerfil || userData.fotoUrl || localProfile.fotoPerfil || localStorage.getItem("user_foto_perfil") || "");
+            setFotoPerfil(resolvedFoto || "");
             setDireccion(userData.direccion || userData.address || localProfile.direccion || localStorage.getItem("user_address") || "");
             setProvincia(userData.provincia || userData.province || localProfile.provincia || localStorage.getItem("user_province") || "");
             setCiudad(userData.ciudad || userData.city || localProfile.ciudad || localStorage.getItem("user_city") || "");
@@ -95,12 +99,23 @@ export function FamiliarProfileTab({ onProfileUpdate }) {
         localStorage.setItem("user_email", email);
         localStorage.setItem("user_phone", telefono);
         localStorage.setItem("user_dni", dni);
-        localStorage.setItem("user_foto_perfil", fotoPerfil);
+        if (fotoPerfil) {
+            localStorage.setItem("user_foto", fotoPerfil);
+            localStorage.setItem("user_foto_perfil", fotoPerfil);
+        }
         localStorage.setItem("user_address", direccion);
         localStorage.setItem("user_province", provincia);
         localStorage.setItem("user_city", ciudad);
         localStorage.setItem("user_cp", cp);
         localStorage.setItem("user_notes", notasFamilia);
+
+        if (updateUser) {
+            updateUser({
+                nombre,
+                fotoPerfil,
+                foto: fotoPerfil,
+            });
+        }
 
         if (onProfileUpdate) {
             onProfileUpdate(nombre);
@@ -143,10 +158,15 @@ export function FamiliarProfileTab({ onProfileUpdate }) {
                 email={email}
                 fotoPerfil={fotoPerfil}
                 onFotoChange={async (url) => {
-                    setFotoPerfil(url);
-                    localStorage.setItem("user_foto_perfil", url);
+                    const fullUrl = getMediaUrl(url);
+                    setFotoPerfil(fullUrl);
+                    localStorage.setItem("user_foto", fullUrl);
+                    localStorage.setItem("user_foto_perfil", fullUrl);
+                    if (updateUser) {
+                        updateUser({ fotoPerfil: fullUrl, foto: fullUrl });
+                    }
                     try {
-                        await authService.updateProfile({ fotoPerfil: url }).catch(() => null);
+                        await authService.updateProfile({ fotoPerfil: fullUrl }).catch(() => null);
                     } catch (e) {
                         console.warn("No se pudo guardar la foto de perfil en el backend:", e);
                     }

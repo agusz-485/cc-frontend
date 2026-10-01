@@ -3,6 +3,7 @@ import { Menu, Bell } from "lucide-react";
 import { P } from "../../shared";
 import logoCareConnect from "../../assets/logo_careconnect.png";
 import { getMediaUrl } from "../../api/client";
+import { useAuth } from "../../context/AuthContext";
 
 export function DashboardMobileHeader({ 
   onOpenMenu, 
@@ -13,6 +14,8 @@ export function DashboardMobileHeader({
   role = "familiar",
   navigate 
 }) {
+  const { user } = useAuth();
+
   const getInitials = (name) => {
     if (!name) return "U";
     return name
@@ -23,8 +26,8 @@ export function DashboardMobileHeader({
       .join("");
   };
 
-  const displayName = userName || localStorage.getItem("user_name") || "Usuario";
-  const foto = userFoto || localStorage.getItem("user_foto") || localStorage.getItem("user_foto_perfil");
+  const displayName = userName || user?.nombre || localStorage.getItem("user_name") || "Usuario";
+  const foto = userFoto || user?.fotoPerfil || user?.foto || localStorage.getItem("user_foto") || localStorage.getItem("user_foto_perfil");
 
   return (
     <header className="md:hidden sticky top-0 z-30 flex items-center justify-between px-4 py-3 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-xs flex-shrink-0">

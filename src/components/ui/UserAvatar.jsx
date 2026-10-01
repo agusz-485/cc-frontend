@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { User, Stethoscope, HeartHandshake } from "lucide-react";
 import { P } from "../../shared";
-import api from "../../api/client";
+import { getMediaUrl } from "../../api/client";
 
 export function getInitials(name) {
   if (!name || typeof name !== "string") return "U";
@@ -40,19 +40,7 @@ export function UserAvatar({
   };
 
   const selectedSizeClass = sizeClasses[size] || sizeClasses.md;
-
-  const resolveImageUrl = (url) => {
-    if (!url || typeof url !== "string") return "";
-    const cleanUrl = url.trim();
-    if (cleanUrl.startsWith("/")) {
-      const base = api.defaults.baseURL || "";
-      const origin = base.startsWith("http") ? new URL(base).origin : "";
-      if (origin) return `${origin}${cleanUrl}`;
-    }
-    return cleanUrl;
-  };
-
-  const resolvedSrc = resolveImageUrl(src);
+  const resolvedSrc = getMediaUrl(src);
   const hasValidImage = Boolean(resolvedSrc && resolvedSrc.length > 0 && !imageFailed);
 
   if (hasValidImage) {

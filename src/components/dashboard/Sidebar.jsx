@@ -18,6 +18,7 @@ import {
 import { P } from "../../shared";
 import logoCareConnect from "../../assets/logo_careconnect.png";
 import { getMediaUrl } from "../../api/client";
+import { useAuth } from "../../context/AuthContext";
 
 export function Sidebar({ 
     active, 
@@ -26,10 +27,13 @@ export function Sidebar({
     role, 
     setRole, 
     userName, 
+    userFoto,
     badges = {},
     isOpen = false,
     onClose = () => {} 
 }) {
+    const { user, logout } = useAuth();
+
     // Cerrar drawer al presionar la tecla Escape
     useEffect(() => {
         const handleKeyDown = (e) => {
@@ -82,9 +86,9 @@ export function Sidebar({
     const badge = badges || {};
 
     const getProfileInfo = () => {
-        const name = userName || localStorage.getItem("user_name");
-        const storedEmail = localStorage.getItem("user_email");
-        const foto = localStorage.getItem("user_foto") || localStorage.getItem("user_foto_perfil");
+        const name = userName || user?.nombre || localStorage.getItem("user_name");
+        const storedEmail = user?.email || localStorage.getItem("user_email");
+        const foto = userFoto || user?.fotoPerfil || user?.foto || localStorage.getItem("user_foto") || localStorage.getItem("user_foto_perfil");
         if (role === "cuidador") return { name: name || "Profesional de Cuidado", desc: storedEmail || "Cuidador / Enfermero", foto };
         if (role === "administrador") return { name: name || "Administrador", desc: storedEmail || "Panel de Administración", foto };
         return { name: name || "Usuario", desc: storedEmail || "Cuenta Familiar", foto };
@@ -98,11 +102,14 @@ export function Sidebar({
     };
 
     const handleLogout = () => {
+        if (logout) logout();
         localStorage.removeItem("token");
         localStorage.removeItem("user_id");
         localStorage.removeItem("user_role");
         localStorage.removeItem("user_email");
         localStorage.removeItem("user_name");
+        localStorage.removeItem("user_foto");
+        localStorage.removeItem("user_foto_perfil");
         if (onClose) onClose();
         navigate("/");
     };
@@ -210,7 +217,7 @@ export function Sidebar({
 
     return (
         <>
-            {/* 1. SIDEBAR DESKTOP (visible en pantallas md y mayores) */}
+            {/* 1. SIDEBAR DESKTOP */}
             <aside 
                 className="hidden md:flex w-56 flex-shrink-0 flex-col h-screen sticky top-0" 
                 style={{ backgroundColor: P.dark }}
@@ -218,9 +225,8 @@ export function Sidebar({
                 {renderSidebarContent(false)}
             </aside>
 
-            {/* 2. MENU DESPLEGABLE / DRAWER MÓVIL (visible en móviles cuando isOpen = true) */}
+            {/* 2. MENU DESPLEGABLE / DRAWER MÓVIL */}
             <div className="md:hidden">
-                {/* Backdrop Overlay */}
                 <div 
                     className={`fixed inset-0 bg-black/60 backdrop-blur-xs z-40 transition-opacity duration-300 ${
                         isOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
@@ -229,7 +235,6 @@ export function Sidebar({
                     aria-hidden="true"
                 />
 
-                {/* Off-canvas Drawer Panel */}
                 <aside 
                     className={`fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] flex flex-col shadow-2xl transition-transform duration-300 ease-in-out ${
                         isOpen ? "translate-x-0" : "-translate-x-full pointer-events-none"
