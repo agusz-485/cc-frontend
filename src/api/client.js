@@ -1,7 +1,19 @@
 import axios from 'axios';
 
+const getBaseUrl = () => {
+    let envUrl = (import.meta.env.VITE_API_URL || '').trim();
+    if (!envUrl) return '/api/v1'; // Usa el proxy de Vite en desarrollo local
+    // Elimina slashes al final
+    envUrl = envUrl.replace(/\/+$/, '');
+    // Asegura que termine en /api/v1
+    if (!envUrl.endsWith('/api/v1')) {
+        envUrl = `${envUrl}/api/v1`;
+    }
+    return envUrl;
+};
+
 const api = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || '/api/v1', // Usa el proxy de Vite en dev o la URL configurada
+    baseURL: getBaseUrl(),
     headers: {
         'Content-Type': 'application/json',
     },
