@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { P } from "../../shared";
 import { Sidebar } from "../../components/dashboard/Sidebar";
+import { DashboardMobileHeader } from "../../components/dashboard/DashboardMobileHeader";
 import { SectionInicio } from "../../components/dashboard/SectionInicio";
 import { SectionMessages } from "../../components/dashboard/SectionMessages";
 import { SectionBookings } from "../../components/dashboard/SectionBookings";
@@ -17,6 +18,16 @@ import { useAuth } from "../../context/AuthContext";
 // Local state placeholders for non-active mock sections
 const DOCUMENTS = [];
 const ACTIVITY = [];
+
+const TAB_TITLES = {
+  inicio: "Inicio",
+  messages: "Mensajes",
+  bookings: "Mis Reservas",
+  adultos_a_cargo: "Adultos a Cargo",
+  caregivers: "Mis Cuidadores",
+  documents: "Documentos",
+  settings: "Configuración",
+};
 
 export function FamiliarDashboard() {
   const navigate = useNavigate();
@@ -40,6 +51,7 @@ export function FamiliarDashboard() {
   const [seniors, setSeniors] = useState([]);
   const [bookings, setBookings] = useState([]);
   const [savedCaregivers, setSavedCaregivers] = useState([]);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     if (queryTab) {
@@ -118,8 +130,11 @@ export function FamiliarDashboard() {
     localStorage.setItem("user_name", newName);
   };
 
+  const currentTitle = TAB_TITLES[activeNav] || "Dashboard";
+
   return (
-    <div className="flex h-screen overflow-hidden relative" style={{ fontFamily: "'Inter', sans-serif" }}>
+    <div className="flex h-screen overflow-hidden relative bg-slate-50" style={{ fontFamily: "'Inter', sans-serif" }}>
+      {/* Sidebar Responsive (Desktop fijo + Mobile Drawer) */}
       <Sidebar
         active={activeNav}
         setActive={setActiveNav}
@@ -127,44 +142,59 @@ export function FamiliarDashboard() {
         role="familiar"
         setRole={() => {}}
         userName={userName}
+        isOpen={isMobileMenuOpen}
+        onClose={() => setIsMobileMenuOpen(false)}
       />
 
-      <div className="flex-1 flex overflow-hidden">
-        {activeNav === "inicio" && (
-          <SectionInicio
-            setActive={setActiveNav}
-            navigate={navigate}
-            bookings={bookings}
-            savedCaregivers={savedCaregivers}
-            activity={ACTIVITY}
-            userName={userName}
-          />
-        )}
-        {activeNav === "messages" && <SectionMessages />}
-        {activeNav === "bookings" && (
-          <SectionBookings
-            navigate={navigate}
-            bookings={bookings}
-            onStatusChange={handleBookingStatusChange}
-          />
-        )}
-        {activeNav === "adultos_a_cargo" && (
-          <SectionAdultosACargo
-            seniors={seniors}
-            setSeniors={updateSeniorsState}
-          />
-        )}
-        {activeNav === "caregivers" && (
-          <SectionCaregivers
-            navigate={navigate}
-            savedCaregivers={savedCaregivers}
-            onRemoveFavorite={handleRemoveFavorite}
-          />
-        )}
-        {activeNav === "documents" && <SectionDocuments documents={DOCUMENTS} />}
-        {activeNav === "settings" && (
-          <SectionSettings onProfileUpdate={handleProfileNameChange} role="familiar" />
-        )}
+      {/* Contenedor Principal */}
+      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
+        {/* Header Superior Móvil con Menú Desplegable */}
+        <DashboardMobileHeader
+          onOpenMenu={() => setIsMobileMenuOpen(true)}
+          title={currentTitle}
+          userName={userName}
+          role="familiar"
+          navigate={navigate}
+        />
+
+        {/* Sección de Contenido Activo */}
+        <div className="flex-1 flex overflow-hidden min-w-0">
+          {activeNav === "inicio" && (
+            <SectionInicio
+              setActive={setActiveNav}
+              navigate={navigate}
+              bookings={bookings}
+              savedCaregivers={savedCaregivers}
+              activity={ACTIVITY}
+              userName={userName}
+            />
+          )}
+          {activeNav === "messages" && <SectionMessages />}
+          {activeNav === "bookings" && (
+            <SectionBookings
+              navigate={navigate}
+              bookings={bookings}
+              onStatusChange={handleBookingStatusChange}
+            />
+          )}
+          {activeNav === "adultos_a_cargo" && (
+            <SectionAdultosACargo
+              seniors={seniors}
+              setSeniors={updateSeniorsState}
+            />
+          )}
+          {activeNav === "caregivers" && (
+            <SectionCaregivers
+              navigate={navigate}
+              savedCaregivers={savedCaregivers}
+              onRemoveFavorite={handleRemoveFavorite}
+            />
+          )}
+          {activeNav === "documents" && <SectionDocuments documents={DOCUMENTS} />}
+          {activeNav === "settings" && (
+            <SectionSettings onProfileUpdate={handleProfileNameChange} role="familiar" />
+          )}
+        </div>
       </div>
     </div>
   );
