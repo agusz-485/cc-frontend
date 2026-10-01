@@ -30,7 +30,15 @@ export const uploadFile = async (file, folder = "general") => {
       },
     });
 
-    return response.data;
+    const data = response.data;
+    if (data && data.url && data.url.startsWith("/")) {
+      const base = api.defaults.baseURL || "";
+      const origin = base.startsWith("http") ? new URL(base).origin : "";
+      if (origin) {
+        data.url = `${origin}${data.url}`;
+      }
+    }
+    return data;
   } catch (error) {
     console.error("Error al subir archivo:", error);
     const msg = error.response?.data?.error || error.response?.data?.message || "Error al subir el archivo al servidor.";

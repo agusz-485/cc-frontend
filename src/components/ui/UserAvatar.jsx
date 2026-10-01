@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { User, Stethoscope, HeartHandshake } from "lucide-react";
 import { P } from "../../shared";
+import api from "../../api/client";
 
 export function getInitials(name) {
   if (!name || typeof name !== "string") return "U";
@@ -40,13 +41,25 @@ export function UserAvatar({
 
   const selectedSizeClass = sizeClasses[size] || sizeClasses.md;
 
-  const hasValidImage = Boolean(src && typeof src === "string" && src.trim().length > 0 && !imageFailed);
+  const resolveImageUrl = (url) => {
+    if (!url || typeof url !== "string") return "";
+    const cleanUrl = url.trim();
+    if (cleanUrl.startsWith("/")) {
+      const base = api.defaults.baseURL || "";
+      const origin = base.startsWith("http") ? new URL(base).origin : "";
+      if (origin) return `${origin}${cleanUrl}`;
+    }
+    return cleanUrl;
+  };
+
+  const resolvedSrc = resolveImageUrl(src);
+  const hasValidImage = Boolean(resolvedSrc && resolvedSrc.length > 0 && !imageFailed);
 
   if (hasValidImage) {
     return (
       <div className={`relative overflow-hidden flex-shrink-0 ${selectedSizeClass} ${shape} ${className}`} style={{ backgroundColor: "#eaf3f5" }}>
         <img
-          src={src}
+          src={resolvedSrc}
           alt={alt || name}
           className="w-full h-full object-cover"
           onError={() => setImageFailed(true)}
