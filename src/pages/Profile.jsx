@@ -15,6 +15,7 @@ import {
   ProfileNotFound,
   BookingModal,
 } from "../components/profile";
+import { Navbar } from "../components/layout/Navbar";
 
 export default function Profile() {
   const { id } = useParams();
@@ -114,6 +115,7 @@ export default function Profile() {
 
   return (
     <div style={{ backgroundColor: "#f8fbfd", minHeight: "100vh" }}>
+      <Navbar />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <button
           onClick={() => navigate("/directory")}

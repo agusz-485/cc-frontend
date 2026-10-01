@@ -1,11 +1,16 @@
 import axios from 'axios';
 
+const BACKEND_PROD_URL = 'https://cc-backend-cfar.onrender.com';
+
 const getBaseUrl = () => {
     let envUrl = (import.meta.env.VITE_API_URL || '').trim();
-    if (!envUrl) return '/api/v1'; // Usa el proxy de Vite en desarrollo local
-    // Elimina slashes al final
+    if (!envUrl) {
+        if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+            return `${BACKEND_PROD_URL}/api/v1`;
+        }
+        return '/api/v1'; // Usa el proxy de Vite en desarrollo local
+    }
     envUrl = envUrl.replace(/\/+$/, '');
-    // Asegura que termine en /api/v1
     if (!envUrl.endsWith('/api/v1')) {
         envUrl = `${envUrl}/api/v1`;
     }
@@ -13,24 +18,33 @@ const getBaseUrl = () => {
 };
 
 /**
- * Convierte rutas relativas de backend (/api/v1/uploads/...) a URLs absolutas en produccion.
+ * Convierte rutas relativas o URLs desalineadas de uploads a URLs absolutas funcionales hacia el backend.
  */
 export const getMediaUrl = (url) => {
     if (!url || typeof url !== 'string') return '';
-    const clean = url.trim();
-    if (clean.startsWith('http://') || clean.startsWith('https://') || clean.startsWith('data:') || clean.startsWith('blob:')) {
+    let clean = url.trim();
+    if (!clean) return '';
+    
+    // Si ya es un data URI o blob local en memoria
+    if (clean.startsWith('data:') || clean.startsWith('blob:')) {
         return clean;
     }
-    const base = getBaseUrl();
-    if (base.startsWith('http')) {
-        try {
-            const origin = new URL(base).origin;
-            return clean.startsWith('/') ? `${origin}${clean}` : `${origin}/${clean}`;
-        } catch (e) {
-            return clean;
-        }
+
+    // Corregir URLs guardadas que apuntaban por error al dominio de frontend o localhost
+    if (clean.includes('vercel.app/api/v1/uploads') || clean.includes('localhost:5173/api/v1/uploads') || clean.includes('vercel.app/uploads')) {
+        clean = clean.replace(/https?:\/\/[^\/]+/, BACKEND_PROD_URL);
+        return clean;
     }
-    return clean;
+
+    // Si ya es URL completa HTTP/HTTPS hacia el backend o cloud storage
+    if (clean.startsWith('http://') || clean.startsWith('https://')) {
+        return clean;
+    }
+
+    // Si es una ruta relativa (/api/v1/uploads/..., /uploads/...)
+    const base = getBaseUrl();
+    const origin = base.startsWith('http') ? new URL(base).origin : BACKEND_PROD_URL;
+    return clean.startsWith('/') ? `${origin}${clean}` : `${origin}/${clean}`;
 };
 
 const api = axios.create({

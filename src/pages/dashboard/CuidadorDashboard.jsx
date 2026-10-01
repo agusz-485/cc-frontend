@@ -5,6 +5,7 @@ import api from "../../api/client";
 import { updateProfessionalProfile, decodeScheduleFromDescription, encodeScheduleInDescription } from "../../services/searchService";
 import { getCaregiverRequests, updateBookingStatus } from "../../services/bookingService";
 import { Sidebar } from "../../components/dashboard/Sidebar";
+import { DashboardMobileHeader } from "../../components/dashboard/DashboardMobileHeader";
 import { SectionInicioCuidador } from "../../components/dashboard/SectionInicioCuidador";
 import { SectionMessages } from "../../components/dashboard/SectionMessages";
 import { SectionSolicitudes } from "../../components/dashboard/SectionSolicitudes";
@@ -13,6 +14,17 @@ import { SectionAgenda } from "../../components/dashboard/SectionAgenda";
 import { SectionGanancias } from "../../components/dashboard/SectionGanancias";
 import { SectionCertificados } from "../../components/dashboard/SectionCertificados";
 import { SectionSettings } from "../../components/dashboard/SectionSettings";
+
+const TAB_TITLES = {
+    inicio_cuidador: "Inicio",
+    solicitudes: "Solicitudes",
+    perfil_profesional: "Perfil Profesional",
+    agenda: "Mi Agenda",
+    ganancias: "Ganancias",
+    certificados: "Certificaciones",
+    messages: "Mensajes",
+    settings: "Configuración",
+};
 
 export function CuidadorDashboard() {
     const navigate = useNavigate();
@@ -29,6 +41,7 @@ export function CuidadorDashboard() {
     const queryTab = new URLSearchParams(location.search).get("tab");
     const [activeNav, setActiveNav] = useState(queryTab || "inicio_cuidador");
     const [userName, setUserName] = useState(getFullName());
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     const [caregiverData, setCaregiverData] = useState(() => ({
         professionalType: (user?.rol || user?.role || "cuidador").toLowerCase().includes("enfermero") ? "enfermero" : "cuidador",
@@ -141,9 +154,11 @@ export function CuidadorDashboard() {
     };
 
     const pendingRequestsCount = requests.filter((r) => r.status === "pending").length;
+    const currentTitle = TAB_TITLES[activeNav] || "Dashboard";
 
     return (
-        <div className="flex h-screen overflow-hidden relative" style={{ fontFamily: "'Inter', sans-serif" }}>
+        <div className="flex h-screen overflow-hidden relative bg-slate-50" style={{ fontFamily: "'Inter', sans-serif" }}>
+            {/* Sidebar Responsive (Desktop fijo + Mobile Drawer) */}
             <Sidebar
                 active={activeNav}
                 setActive={setActiveNav}
@@ -152,41 +167,57 @@ export function CuidadorDashboard() {
                 setRole={() => {}}
                 userName={userName}
                 badges={pendingRequestsCount > 0 ? { solicitudes: pendingRequestsCount } : {}}
+                isOpen={isMobileMenuOpen}
+                onClose={() => setIsMobileMenuOpen(false)}
             />
 
-            <div className="flex-1 flex overflow-hidden">
-                {activeNav === "inicio_cuidador" && (
-                    <SectionInicioCuidador
-                        setActive={setActiveNav}
-                        visible={caregiverData.visible}
-                        statistics={{ calificacionPromedio: 5.0, totalResenas: requests.length, cantidadServicios: requests.length, updatedAt: "Hoy" }}
-                        requests={requests}
-                        liquidations={[]}
-                        caregiverData={caregiverData}
-                    />
-                )}
-                {activeNav === "solicitudes" && (
-                    <SectionSolicitudes
-                        requests={requests}
-                        setRequests={setRequests}
-                        onAccept={handleAcceptRequest}
-                        onReject={handleRejectRequest}
-                    />
-                )}
-                {activeNav === "perfil_profesional" && (
-                    <SectionPerfilProfesional
-                        caregiverData={caregiverData}
-                        setCaregiverData={setCaregiverData}
-                        onSaveProfile={handleSaveCaregiverProfile}
-                    />
-                )}
-                {activeNav === "agenda" && <SectionAgenda schedule={schedule} setSchedule={setSchedule} />}
-                {activeNav === "ganancias" && <SectionGanancias historicalEarnings={[]} liquidations={[]} />}
-                {activeNav === "certificados" && <SectionCertificados caregiverData={caregiverData} />}
-                {activeNav === "messages" && <SectionMessages />}
-                {activeNav === "settings" && (
-                    <SectionSettings onProfileUpdate={handleProfileNameChange} role={caregiverData?.professionalType || "cuidador"} />
-                )}
+            {/* Contenedor Principal */}
+            <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
+                {/* Header Superior Móvil con Menú Desplegable */}
+                <DashboardMobileHeader
+                    onOpenMenu={() => setIsMobileMenuOpen(true)}
+                    title={currentTitle}
+                    badgeCount={pendingRequestsCount}
+                    userName={userName}
+                    role={caregiverData?.professionalType || "cuidador"}
+                    navigate={navigate}
+                />
+
+                {/* Sección de Contenido Activo */}
+                <div className="flex-1 flex overflow-hidden min-w-0">
+                    {activeNav === "inicio_cuidador" && (
+                        <SectionInicioCuidador
+                            setActive={setActiveNav}
+                            visible={caregiverData.visible}
+                            statistics={{ calificacionPromedio: 5.0, totalResenas: requests.length, cantidadServicios: requests.length, updatedAt: "Hoy" }}
+                            requests={requests}
+                            liquidations={[]}
+                            caregiverData={caregiverData}
+                        />
+                    )}
+                    {activeNav === "solicitudes" && (
+                        <SectionSolicitudes
+                            requests={requests}
+                            setRequests={setRequests}
+                            onAccept={handleAcceptRequest}
+                            onReject={handleRejectRequest}
+                        />
+                    )}
+                    {activeNav === "perfil_profesional" && (
+                        <SectionPerfilProfesional
+                            caregiverData={caregiverData}
+                            setCaregiverData={setCaregiverData}
+                            onSaveProfile={handleSaveCaregiverProfile}
+                        />
+                    )}
+                    {activeNav === "agenda" && <SectionAgenda schedule={schedule} setSchedule={setSchedule} />}
+                    {activeNav === "ganancias" && <SectionGanancias historicalEarnings={[]} liquidations={[]} />}
+                    {activeNav === "certificados" && <SectionCertificados caregiverData={caregiverData} />}
+                    {activeNav === "messages" && <SectionMessages />}
+                    {activeNav === "settings" && (
+                        <SectionSettings onProfileUpdate={handleProfileNameChange} role={caregiverData?.professionalType || "cuidador"} />
+                    )}
+                </div>
             </div>
         </div>
     );
