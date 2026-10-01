@@ -1,85 +1,259 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useCallback, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { ArrowRight, Mail } from "lucide-react";
+
+import { useAuth } from "../context/AuthContext";
+
+import Navbar from "../components/layout/Navbar";
+import AuthWelcome from "../components/auth/AuthWelcome";
+import FormInput from "../components/ui/FormInput";
+import PasswordInput from "../components/ui/PasswordInput";
+import Toast from "../components/ui/Toast";
+
+import {
+    validateEmail,
+    validateLoginPassword,
+} from "../components/validations/PersonalDataValidation";
 
 export default function Login() {
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [error, setError] = useState('');
-    const [loading, setLoading] = useState(false);
-    const { login } = useAuth();
     const navigate = useNavigate();
+    const { login } = useAuth();
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setError('');
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+
+    const [emailError, setEmailError] = useState("");
+    const [passwordError, setPasswordError] = useState("");
+    const [error, setError] = useState("");
+    const [loading, setLoading] = useState(false);
+
+    const closeError = useCallback(() => {
+        setError("");
+    }, []);
+
+    const handleEmailChange = (event) => {
+        setEmail(event.target.value);
+        setEmailError("");
+        setError("");
+    };
+
+    const handlePasswordChange = (event) => {
+        setPassword(event.target.value);
+        setPasswordError("");
+        setError("");
+    };
+
+    const handleSubmit = async (event) => {
+        event.preventDefault();
+
+        if (loading) return;
+
+        const nextEmailError = validateEmail(email);
+        const nextPasswordError = validateLoginPassword(password);
+
+        setEmailError(nextEmailError);
+        setPasswordError(nextPasswordError);
+        setError("");
+
+        if (nextEmailError || nextPasswordError) {
+            const firstInvalidField = nextEmailError
+                ? "email"
+                : "password";
+
+            event.currentTarget.elements
+                .namedItem(firstInvalidField)
+                ?.focus();
+
+            return;
+        }
+
         setLoading(true);
 
         try {
-            const data = await login({ email, password });
+            const data = await login({
+                email: email.trim(),
+                password,
+            });
 
-            // Busca el rol tanto plano como anidado
-            const rawRole = data?.rol || data?.role || data?.user?.rol || data?.user?.role || '';
-            const role = rawRole.toUpperCase();
+            const role = String(
+                data?.rol ||
+                data?.role ||
+                data?.user?.rol ||
+                data?.user?.role ||
+                ""
+            ).toUpperCase();
 
-            console.log('Datos recibidos:', data, 'Rol detectado:', role);
-
-            if (role.includes('ADMIN')) {
-                navigate('/admin', { replace: true });
-            } else {
-                navigate('/dashboard', { replace: true });
-            }
+            navigate(
+                role.includes("ADMIN") ? "/admin" : "/dashboard",
+                { replace: true }
+            );
         } catch (err) {
-            console.error('Error al iniciar sesión:', err);
-            setError(err.response?.data?.message || 'Credenciales inválidas o error de conexión');
+            const status = err.response?.status;
+
+            if (!err.response) {
+                setError(
+                    "No pudimos conectarnos. Revisá tu conexión e intentá nuevamente."
+                );
+            } else if (status === 401) {
+                setError("Correo o contraseña incorrectos.");
+            } else if (status === 429) {
+                setError(
+                    "Realizaste demasiados intentos. Esperá un momento y volvé a intentar."
+                );
+            } else {
+                setError(
+                    "No pudimos iniciar sesión. Intentá nuevamente."
+                );
+            }
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
-            <div className="w-full max-w-md rounded-xl bg-white p-8 shadow-md">
-                <h2 className="mb-6 text-center text-2xl font-bold text-gray-800">CareConnect</h2>
+        <div className="flex min-h-screen flex-col bg-white">
+            <Navbar variant="login" />
 
-                {error && (
-                    <div className="mb-4 rounded bg-red-100 p-2.5 text-sm text-red-600">
-                        {error}
-                    </div>
-                )}
+            {error && (
+                <Toast
+                    variant="error"
+                    title="No pudimos iniciar sesión"
+                    message={error}
+                    duration={5000}
+                    onClose={closeError}
+                />
+            )}
 
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700">Email</label>
-                        <input
-                            type="email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            className="mt-1 w-full rounded-md border border-gray-300 p-2 text-sm focus:border-blue-500 focus:outline-none"
-                            placeholder="ejemplo@careconnect.com"
-                            required
-                        />
+            <main className="flex w-full flex-1">
+                <AuthWelcome
+                    variant="dark"
+                    title={
+                        <>
+                            Cuidar
+                            <br />
+                            empieza por
+                            <br />
+                            <span className="text-teal-200">
+                                conectar.
+                            </span>
+                        </>
+                    }
+                    description="Qué bueno tenerte de vuelta."
+                />
+
+                <section
+                    className="
+                        flex w-full min-w-0
+                        items-center justify-center
+                        px-6 py-12
+                        sm:px-10
+                        lg:w-1/2
+                    "
+                >
+                    <div className="w-full max-w-md">
+                        <h1
+                            className="
+                                text-3xl font-bold
+                                tracking-tight text-gray-900
+                                sm:text-4xl
+                            "
+                        >
+                            Iniciá sesión
+                        </h1>
+
+                        <p className="mt-3 text-gray-500">
+                            Ingresá a tu cuenta para continuar.
+                        </p>
+
+                        <form
+                            onSubmit={handleSubmit}
+                            className="mt-9 space-y-6"
+                            aria-busy={loading}
+                            noValidate
+                        >
+                            <FormInput
+                                id="email"
+                                name="email"
+                                label="Correo electrónico"
+                                type="email"
+                                icon={Mail}
+                                placeholder="nombre@ejemplo.com"
+                                autoComplete="username"
+                                autoCapitalize="none"
+                                spellCheck={false}
+                                value={email}
+                                onChange={handleEmailChange}
+                                onBlur={() => {
+                                    setEmailError(validateEmail(email));
+                                }}
+                                error={emailError}
+                                disabled={loading}
+                                required
+                            />
+
+                            <PasswordInput
+                                id="password"
+                                name="password"
+                                label="Contraseña"
+                                placeholder="Ingresá tu contraseña"
+                                autoComplete="current-password"
+                                value={password}
+                                onChange={handlePasswordChange}
+                                onBlur={() => {
+                                    setPasswordError(
+                                        validateLoginPassword(password)
+                                    );
+                                }}
+                                error={passwordError}
+                                disabled={loading}
+                                required
+                            />
+
+                            <button
+                                type="submit"
+                                disabled={loading}
+                                className="
+                                    flex w-full items-center
+                                    justify-center gap-2
+                                    rounded-xl bg-teal-800
+                                    px-4 py-3.5
+                                    text-sm font-semibold text-white
+                                    transition-colors hover:bg-teal-900
+                                    disabled:cursor-not-allowed
+                                    disabled:opacity-60
+                                "
+                            >
+                                {loading ? "Ingresando..." : "Ingresar"}
+
+                                {!loading && (
+                                    <ArrowRight
+                                        size={18}
+                                        aria-hidden="true"
+                                    />
+                                )}
+                            </button>
+                        </form>
+
+                        <p
+                            className="
+                                mt-8 border-t border-gray-100 pt-6
+                                text-center text-sm text-gray-500
+                            "
+                        >
+                            ¿Todavía no tenés una cuenta?{" "}
+                            <Link
+                                to="/register"
+                                className="
+                                    font-semibold text-teal-700
+                                    hover:text-teal-900 hover:underline
+                                "
+                            >
+                                Registrate
+                            </Link>
+                        </p>
                     </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700">Contraseña</label>
-                        <input
-                            type="password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            className="mt-1 w-full rounded-md border border-gray-300 p-2 text-sm focus:border-blue-500 focus:outline-none"
-                            placeholder="••••••••"
-                            required
-                        />
-                    </div>
-                    <button
-                        type="submit"
-                        disabled={loading}
-                        className="w-full rounded-md bg-blue-600 py-2 text-white font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 cursor-pointer"
-                    >
-                        {loading ? 'Ingresando...' : 'Ingresar'}
-                    </button>
-                </form>
-            </div>
+                </section>
+            </main>
         </div>
     );
 }
