@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { X, User, Heart, Pill, Calendar, Clock, DollarSign, Phone, FileText, CheckCircle, AlertCircle, ShieldCheck } from "lucide-react";
 import { P, formatARS } from "../../shared";
-import api from "../../api/client";
+import api, { getMediaUrl } from "../../api/client";
 
 export function ModalDetallePaciente({ isOpen, onClose, request, onAccept, onReject }) {
     const [loading, setLoading] = useState(false);
@@ -87,12 +87,19 @@ export function ModalDetallePaciente({ isOpen, onClose, request, onAccept, onRej
                     <div className="p-4 rounded-2xl border bg-slate-50/70 space-y-3" style={{ borderColor: P.baseNeutral }}>
                         <div className="flex items-center gap-3">
                             {patientDetails?.foto ? (
-                                <img src={patientDetails.foto} alt={patientDetails.nombre} className="w-12 h-12 rounded-2xl object-cover border border-slate-200 shadow-sm flex-shrink-0" />
-                            ) : (
-                                <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-white font-bold text-lg shadow-sm flex-shrink-0" style={{ backgroundColor: P.primary }}>
-                                    <User className="w-6 h-6" />
-                                </div>
-                            )}
+                                <img
+                                    src={getMediaUrl(patientDetails.foto)}
+                                    alt={patientDetails.nombre}
+                                    className="w-12 h-12 rounded-2xl object-cover border border-slate-200 shadow-sm flex-shrink-0"
+                                    onError={(e) => {
+                                        e.currentTarget.style.display = "none";
+                                        e.currentTarget.nextElementSibling?.classList.remove("hidden");
+                                    }}
+                                />
+                            ) : null}
+                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-white font-bold text-lg shadow-sm flex-shrink-0 ${patientDetails?.foto ? "hidden" : ""}`} style={{ backgroundColor: P.primary }}>
+                                <User className="w-6 h-6" />
+                            </div>
                             <div>
                                 <h3 className="font-bold text-base text-slate-900">{patientDetails?.nombre} {patientDetails?.apellido}</h3>
                                 <p className="text-xs text-slate-500">{patientDetails?.edad} años · Movilidad: <span className="font-semibold text-slate-700">{patientDetails?.movilidad}</span></p>
@@ -153,12 +160,19 @@ export function ModalDetallePaciente({ isOpen, onClose, request, onAccept, onRej
                         <h4 className="font-bold text-xs uppercase tracking-wider text-sky-900">Contacto con el Familiar Contratante</h4>
                         <div className="flex items-center gap-3">
                             {request.familiarFoto ? (
-                                <img src={request.familiarFoto} alt={request.family} className="w-12 h-12 rounded-2xl object-cover border border-sky-200 flex-shrink-0 shadow-sm" />
-                            ) : (
-                                <div className="w-12 h-12 rounded-2xl bg-sky-200 text-sky-800 font-bold flex items-center justify-center text-base flex-shrink-0">
-                                    {request.family ? request.family[0] : "F"}
-                                </div>
-                            )}
+                                <img
+                                    src={getMediaUrl(request.familiarFoto)}
+                                    alt={request.family}
+                                    className="w-12 h-12 rounded-2xl object-cover border border-sky-200 flex-shrink-0 shadow-sm"
+                                    onError={(e) => {
+                                        e.currentTarget.style.display = "none";
+                                        e.currentTarget.nextElementSibling?.classList.remove("hidden");
+                                    }}
+                                />
+                            ) : null}
+                            <div className={`w-12 h-12 rounded-2xl bg-sky-200 text-sky-800 font-bold flex items-center justify-center text-base flex-shrink-0 ${request.familiarFoto ? "hidden" : ""}`}>
+                                {request.family ? request.family[0] : "F"}
+                            </div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-xs text-slate-700 flex-1">
                                 <div>
                                     <span className="text-slate-400 block text-[10px]">Familiar Responsable</span>

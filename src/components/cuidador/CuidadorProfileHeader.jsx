@@ -2,11 +2,15 @@ import { useState, useRef } from "react";
 import { Edit, Stethoscope, HeartHandshake, Loader2, Camera } from "lucide-react";
 import { P } from "../../shared";
 import { uploadFile } from "../../services/uploadService";
+import { getMediaUrl } from "../../api/client";
 
 export function CuidadorProfileHeader({ nombre, email, isEnfermero, fotoPerfil, onFotoChange }) {
     const avatarInitial = (nombre ? nombre[0] : (email ? email[0] : "P")).toUpperCase();
     const [uploading, setUploading] = useState(false);
+    const [imageError, setImageError] = useState(false);
     const fileInputRef = useRef(null);
+
+    const resolvedFoto = getMediaUrl(fotoPerfil);
 
     const handleFileChange = async (e) => {
         const file = e.target.files?.[0];
@@ -18,6 +22,7 @@ export function CuidadorProfileHeader({ nombre, email, isEnfermero, fotoPerfil, 
         }
 
         setUploading(true);
+        setImageError(false);
         try {
             const res = await uploadFile(file, "perfiles");
             if (onFotoChange) {
@@ -44,12 +49,13 @@ export function CuidadorProfileHeader({ nombre, email, isEnfermero, fotoPerfil, 
             />
 
             <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
-                {fotoPerfil ? (
+                {resolvedFoto && !imageError ? (
                     <img
-                        src={fotoPerfil}
+                        src={resolvedFoto}
                         alt={nombre || "Foto de perfil"}
                         className="w-16 h-16 rounded-2xl object-cover flex-shrink-0 shadow-sm border"
                         style={{ borderColor: P.baseNeutral }}
+                        onError={() => setImageError(true)}
                     />
                 ) : (
                     <div

@@ -12,6 +12,27 @@ const getBaseUrl = () => {
     return envUrl;
 };
 
+/**
+ * Convierte rutas relativas de backend (/api/v1/uploads/...) a URLs absolutas en produccion.
+ */
+export const getMediaUrl = (url) => {
+    if (!url || typeof url !== 'string') return '';
+    const clean = url.trim();
+    if (clean.startsWith('http://') || clean.startsWith('https://') || clean.startsWith('data:') || clean.startsWith('blob:')) {
+        return clean;
+    }
+    const base = getBaseUrl();
+    if (base.startsWith('http')) {
+        try {
+            const origin = new URL(base).origin;
+            return clean.startsWith('/') ? `${origin}${clean}` : `${origin}/${clean}`;
+        } catch (e) {
+            return clean;
+        }
+    }
+    return clean;
+};
+
 const api = axios.create({
     baseURL: getBaseUrl(),
     headers: {

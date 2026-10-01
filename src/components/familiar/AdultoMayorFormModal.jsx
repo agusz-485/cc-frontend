@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { X } from "lucide-react";
 import { P } from "../../shared";
+import { getMediaUrl } from "../../api/client";
 
 export function AdultoMayorFormModal({ isOpen, onClose, onSubmit }) {
   const [nombre, setNombre] = useState("");
@@ -102,7 +103,7 @@ export function AdultoMayorFormModal({ isOpen, onClose, onSubmit }) {
             <label className="block text-xs font-bold uppercase tracking-wider mb-1.5" style={{ color: P.dark }}>Foto de Perfil del Paciente (Opcional)</label>
             <div className="flex items-center gap-3">
               {foto ? (
-                <img src={foto} alt="Preview" className="w-10 h-10 rounded-xl object-cover border border-slate-200" />
+                <img src={getMediaUrl(foto)} alt="Preview" className="w-10 h-10 rounded-xl object-cover border border-slate-200" />
               ) : (
                 <div className="w-10 h-10 rounded-xl bg-slate-100 border flex items-center justify-center text-slate-400 text-xs font-bold">
                   +

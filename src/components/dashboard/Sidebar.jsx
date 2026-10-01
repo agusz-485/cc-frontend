@@ -1,6 +1,7 @@
-import { LayoutDashboard, MessageSquare, Calendar, Users, FileText, Settings, Shield, LogOut, Heart, Bell, DollarSign, Award } from "lucide-react";
+import { LayoutDashboard, MessageSquare, Calendar, Users, FileText, Settings, Shield, LogOut, Heart, Bell, DollarSign, Award, User as UserIcon } from "lucide-react";
 import { P } from "../../shared";
 import logoCareConnect from "../../assets/logo_careconnect.png";
+import { getMediaUrl } from "../../api/client";
 
 export function Sidebar({ active, setActive, navigate, role, setRole, userName, badges = {} }) {
     const getSidebarItems = () => {
@@ -61,12 +62,19 @@ export function Sidebar({ active, setActive, navigate, role, setRole, userName, 
         <div className="px-5 py-4 border-b" style={{ borderColor: "rgba(255,255,255,0.1)" }}>
             <div className="flex items-center gap-3">
                 {profile.foto ? (
-                    <img src={profile.foto} alt={profile.name} className="w-9 h-9 rounded-full object-cover border border-white/20 flex-shrink-0" />
-                ) : (
-                    <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-white flex-shrink-0" style={{ backgroundColor: role === "administrador" ? P.accent : P.secondary }}>
-                        {profile.name.split(' ').map(n => n[0]).join('')}
-                    </div>
-                )}
+                    <img
+                        src={getMediaUrl(profile.foto)}
+                        alt={profile.name}
+                        className="w-9 h-9 rounded-full object-cover border border-white/20 flex-shrink-0"
+                        onError={(e) => {
+                            e.currentTarget.style.display = "none";
+                            e.currentTarget.nextElementSibling?.classList.remove("hidden");
+                        }}
+                    />
+                ) : null}
+                <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-white flex-shrink-0 ${profile.foto ? "hidden" : ""}`} style={{ backgroundColor: role === "administrador" ? P.accent : P.secondary }}>
+                    {profile.name.split(' ').map(n => n[0]).join('')}
+                </div>
                 <div className="min-w-0">
                     <p className="text-sm font-semibold text-white truncate max-w-32" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>{profile.name}</p>
                     <p className="text-xs truncate max-w-32" style={{ color: "rgba(255,255,255,0.45)" }}>{profile.desc}</p>

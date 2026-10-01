@@ -1,4 +1,5 @@
 import { P } from "../../shared";
+import { getMediaUrl } from "../../api/client";
 
 export function SeniorDetailSidebar({ selectedSenior }) {
     if (!selectedSenior) return null;
@@ -17,21 +18,25 @@ export function SeniorDetailSidebar({ selectedSenior }) {
 
     const initialLetter1 = selectedSenior.nombre?.[0] || "A";
     const initialLetter2 = selectedSenior.apellido?.[0] || "";
+    const resolvedFoto = getMediaUrl(selectedSenior.foto || selectedSenior.fotoPerfil);
 
     return (
         <div className="bg-white rounded-3xl p-6 border shadow-sm space-y-4 text-left" style={{ borderColor: P.baseNeutral }}>
             <div className="text-center pb-4 border-b" style={{ borderColor: P.baseNeutral }}>
-                {selectedSenior.foto || selectedSenior.fotoPerfil ? (
+                {resolvedFoto ? (
                     <img
-                        src={selectedSenior.foto || selectedSenior.fotoPerfil}
+                        src={resolvedFoto}
                         alt={selectedSenior.nombre}
                         className="w-16 h-16 rounded-full object-cover mx-auto mb-3 shadow-sm border border-slate-200"
+                        onError={(e) => {
+                            e.currentTarget.style.display = "none";
+                            e.currentTarget.nextElementSibling?.classList.remove("hidden");
+                        }}
                     />
-                ) : (
-                    <div className="w-16 h-16 rounded-full bg-sky-100 text-sky-700 font-extrabold text-2xl flex items-center justify-center mx-auto mb-3 shadow-inner">
-                        {initialLetter1}{initialLetter2}
-                    </div>
-                )}
+                ) : null}
+                <div className={`w-16 h-16 rounded-full bg-sky-100 text-sky-700 font-extrabold text-2xl flex items-center justify-center mx-auto mb-3 shadow-inner ${resolvedFoto ? "hidden" : ""}`}>
+                    {initialLetter1}{initialLetter2}
+                </div>
                 <h4 className="font-extrabold text-base" style={{ color: P.dark }}>
                     {selectedSenior.nombre} {selectedSenior.apellido || ""}
                 </h4>
