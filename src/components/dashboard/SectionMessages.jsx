@@ -279,10 +279,11 @@ export function SectionMessages() {
                             />
                             <div>
                                 <p className="text-sm font-bold text-slate-900">{activeChat.name}</p>
-                                <p className="text-[11px] text-emerald-600 font-semibold flex items-center gap-1">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                                    Disponible en CareConnect
-                                </p>
+                                {activeChat.role && (
+                                    <p className="text-[11px] text-slate-500 font-medium">
+                                        {activeChat.role}
+                                    </p>
+                                )}
                             </div>
                         </div>
 
