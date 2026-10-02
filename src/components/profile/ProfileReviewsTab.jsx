@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
-import { MessageSquare, Star, User, Loader2 } from "lucide-react";
+import { MessageSquare, Star, Loader2 } from "lucide-react";
 import { P, StarRating } from "../../shared";
 import { getReviewsByCaregiver } from "../../services/reviewService";
+import { UserAvatar } from "../ui/UserAvatar";
 
-export function ProfileReviewsTab({ reviews: initialReviews = [], caregiverId }) {
+export function ProfileReviewsTab({ reviews: initialReviews = [], caregiverId, onReviewsLoaded }) {
   const [reviews, setReviews] = useState(initialReviews);
   const [loading, setLoading] = useState(false);
 
@@ -14,12 +15,24 @@ export function ProfileReviewsTab({ reviews: initialReviews = [], caregiverId })
       getReviewsByCaregiver(caregiverId)
         .then((fetched) => {
           if (isMounted) {
-            if (fetched && fetched.length > 0) {
-              setReviews(fetched);
-            } else if (initialReviews && initialReviews.length > 0) {
-              setReviews(initialReviews);
+            const list = (fetched && fetched.length > 0)
+              ? fetched
+              : (initialReviews && initialReviews.length > 0 ? initialReviews : []);
+            setReviews(list);
+
+            if (list.length > 0) {
+              const avg = (list.reduce((acc, r) => acc + (Number(r.rating) || 5), 0) / list.length).toFixed(1);
+              onReviewsLoaded?.({
+                averageRating: Number(avg),
+                totalReviews: list.length,
+                reviews: list,
+              });
             } else {
-              setReviews([]);
+              onReviewsLoaded?.({
+                averageRating: 5.0,
+                totalReviews: 0,
+                reviews: [],
+              });
             }
           }
         })
@@ -37,7 +50,7 @@ export function ProfileReviewsTab({ reviews: initialReviews = [], caregiverId })
     return () => {
       isMounted = false;
     };
-  }, [caregiverId, initialReviews]);
+  }, [caregiverId]);
 
   if (loading) {
     return (
@@ -93,9 +106,9 @@ export function ProfileReviewsTab({ reviews: initialReviews = [], caregiverId })
       <div className="flex flex-col gap-4">
         {reviews.map((rev, index) => {
           const author = rev.author || rev.autorNombre || "Familiar";
-          const rating = rev.rating || rev.puntuacion || 5;
+          const rating = Number(rev.rating || rev.puntuacion || 5);
           const date = rev.date || rev.fecha || "Reciente";
-          const text = rev.text || rev.comment || rev.comentario || "Servicio completado satisfactoriamente.";
+          const commentText = (rev.comment !== undefined ? rev.comment : (rev.comentario !== undefined ? rev.comentario : rev.text))?.trim();
           const authorFoto = rev.authorFoto || rev.foto;
 
           return (
@@ -106,20 +119,13 @@ export function ProfileReviewsTab({ reviews: initialReviews = [], caregiverId })
             >
               <div className="flex items-start justify-between mb-2.5">
                 <div className="flex items-center gap-3">
-                  {authorFoto ? (
-                    <img
-                      src={authorFoto}
-                      alt={author}
-                      className="w-10 h-10 rounded-full object-cover border border-slate-200"
-                    />
-                  ) : (
-                    <div
-                      className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white flex-shrink-0 shadow-sm"
-                      style={{ backgroundColor: P.secondary }}
-                    >
-                      {author?.[0]?.toUpperCase() || <User className="w-5 h-5" />}
-                    </div>
-                  )}
+                  <UserAvatar
+                    src={authorFoto}
+                    name={author}
+                    size="sm"
+                    shape="rounded-full"
+                    className="w-10 h-10 border border-slate-200"
+                  />
                   <div>
                     <p className="text-sm font-bold" style={{ color: P.dark }}>
                       {author}
@@ -131,12 +137,18 @@ export function ProfileReviewsTab({ reviews: initialReviews = [], caregiverId })
                 </div>
                 <div className="flex flex-col items-end">
                   <StarRating rating={rating} size="sm" />
-                  <span className="text-[11px] font-bold text-amber-600 mt-1">{rating}.0 / 5.0</span>
+                  <span className="text-[11px] font-bold text-amber-600 mt-1">{rating.toFixed(1)} / 5.0</span>
                 </div>
               </div>
-              <p className="text-sm leading-relaxed text-slate-700 mt-1 pl-1">
-                "{text}"
-              </p>
+              {commentText ? (
+                <p className="text-sm leading-relaxed text-slate-700 mt-1 pl-1">
+                  "{commentText}"
+                </p>
+              ) : (
+                <p className="text-xs italic text-slate-400 mt-1 pl-1">
+                  Sin comentario adicional escrito.
+                </p>
+              )}
             </div>
           );
         })}

@@ -72,9 +72,9 @@ export const getReviewsByCaregiver = async (cuidadorId) => {
         id: r.id,
         author: r.autorNombre || "Familiar",
         authorFoto: getMediaUrl(r.autorFoto),
-        rating: r.puntuacion || 5,
-        comment: r.comentario || "Excelente atención y cuidado profesional.",
-        date: r.fechaCreacion ? new Date(r.fechaCreacion).toLocaleDateString() : "Reciente",
+        rating: Number(r.puntuacion || 5),
+        comment: r.comentario ? r.comentario.trim() : "",
+        date: r.fechaCreacion ? new Date(r.fechaCreacion).toLocaleDateString("es-AR") : "Reciente",
       }));
     }
   } catch (error) {
