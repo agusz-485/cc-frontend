@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Edit, User, Loader2, Camera } from "lucide-react";
 import { P } from "../../shared";
 import { uploadFile } from "../../services/uploadService";
@@ -11,6 +11,10 @@ export function FamiliarProfileHeader({ nombre, email, fotoPerfil, onFotoChange 
     const fileInputRef = useRef(null);
 
     const resolvedFoto = getMediaUrl(fotoPerfil);
+
+    useEffect(() => {
+        setImageError(false);
+    }, [fotoPerfil, resolvedFoto]);
 
     const handleFileChange = async (e) => {
         const file = e.target.files?.[0];

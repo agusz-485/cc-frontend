@@ -1,4 +1,4 @@
-import api from "../api/client";
+import api, { getMediaUrl } from "../api/client";
 
 export const encodeScheduleInDescription = (bio, schedule) => {
   const cleanBio = (bio || "").replace(/<!--\s*SCHEDULE_DATA:[\s\S]*?-->/g, "").trim();
@@ -63,7 +63,7 @@ export const searchProfessionals = async () => {
           description: cleanBio,
           verified: c.disponible !== undefined ? c.disponible : true,
           tipo: "cuidador",
-          image: c.fotoPerfil || null,
+          image: getMediaUrl(c.fotoPerfil),
         };
       });
     } catch (e) {}
@@ -95,7 +95,7 @@ export const searchProfessionals = async () => {
           description: cleanBio,
           verified: n.visible !== undefined ? n.visible : true,
           tipo: "enfermero",
-          image: n.fotoPerfil || null,
+          image: getMediaUrl(n.fotoPerfil),
         };
       });
     } catch (e) {}
@@ -203,7 +203,7 @@ export const getProfessionalById = async (id) => {
         specialties: c.especialidades || [],
         bio: cleanBio || "Cuidador profesional con experiencia en asistencia y cuidado integral.",
         experience: c.aniosExperiencia || 3,
-        image: c.fotoPerfil || null,
+        image: getMediaUrl(c.fotoPerfil),
         coverageZones: mergedZones,
         certifications: mergedCerts,
         schedule: activeSched,
@@ -242,7 +242,7 @@ export const getProfessionalById = async (id) => {
           specialties: ["Enfermería General", "Atención Clínica Domiciliaria"],
           bio: cleanBio || "Enfermero matriculado capacitado en atención clínica.",
           experience: n.aniosExperiencia || 3,
-          image: n.fotoPerfil || null,
+          image: getMediaUrl(n.fotoPerfil),
           coverageZones: mergedZones,
           certifications: mergedCerts,
           schedule: activeSched,

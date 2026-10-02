@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { CheckCircle, Ban, Search, ShieldCheck, UserCheck, AlertCircle } from "lucide-react";
 import { P } from "../shared";
+import { UserAvatar } from "../ui/UserAvatar";
 
 export default function UserModerationTable({ users = [], onApprove, onSuspend, loading }) {
     const [filter, setFilter] = useState("TODOS");
@@ -85,8 +86,20 @@ export default function UserModerationTable({ users = [], onApprove, onSuspend, 
                             filteredUsers.map((u) => (
                                 <tr key={u.id} className="hover:bg-neutral-50/60 transition-colors">
                                     <td className="p-4">
-                                        <p className="font-bold" style={{ color: P.dark }}>{u.nombre} {u.apellido}</p>
-                                        <p className="text-xs" style={{ color: P.neutralDark }}>{u.email}</p>
+                                        <div className="flex items-center gap-3">
+                                            <UserAvatar
+                                                src={u.fotoPerfil}
+                                                name={`${u.nombre || ""} ${u.apellido || ""}`}
+                                                tipo={u.rol}
+                                                size="sm"
+                                                shape="rounded-xl"
+                                                className="w-9 h-9 border border-slate-200 shadow-2xs flex-shrink-0"
+                                            />
+                                            <div>
+                                                <p className="font-bold" style={{ color: P.dark }}>{u.nombre} {u.apellido}</p>
+                                                <p className="text-xs" style={{ color: P.neutralDark }}>{u.email}</p>
+                                            </div>
+                                        </div>
                                     </td>
                                     <td className="p-4 font-semibold text-xs" style={{ color: P.dark }}>
                                         {u.rol}

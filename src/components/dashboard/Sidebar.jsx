@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { P } from "../../shared";
 import logoCareConnect from "../../assets/logo_careconnect.png";
-import { getMediaUrl } from "../../api/client";
+import { UserAvatar } from "../ui/UserAvatar";
 import { useAuth } from "../../context/AuthContext";
 
 export function Sidebar({ 
@@ -147,23 +147,14 @@ export function Sidebar({
             {/* Perfil del Usuario Activo */}
             <div className="px-5 py-4 border-b" style={{ borderColor: "rgba(255,255,255,0.1)" }}>
                 <div className="flex items-center gap-3">
-                    {profile.foto ? (
-                        <img
-                            src={getMediaUrl(profile.foto)}
-                            alt={profile.name}
-                            className="w-10 h-10 rounded-full object-cover border border-white/20 flex-shrink-0"
-                            onError={(e) => {
-                                e.currentTarget.style.display = "none";
-                                e.currentTarget.nextElementSibling?.classList.remove("hidden");
-                            }}
-                        />
-                    ) : null}
-                    <div 
-                        className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white flex-shrink-0 ${profile.foto ? "hidden" : ""}`} 
-                        style={{ backgroundColor: role === "administrador" ? P.accent : P.secondary }}
-                    >
-                        {profile.name.split(' ').filter(Boolean).slice(0, 2).map(n => n[0]).join('')}
-                    </div>
+                    <UserAvatar
+                        src={profile.foto}
+                        name={profile.name}
+                        tipo={role}
+                        size="sm"
+                        shape="rounded-full"
+                        className="w-10 h-10 border border-white/20 flex-shrink-0"
+                    />
                     <div className="min-w-0 flex-1">
                         <p className="text-sm font-semibold text-white truncate" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
                             {profile.name}

@@ -2,7 +2,7 @@ import React from "react";
 import { Menu, Bell } from "lucide-react";
 import { P } from "../../shared";
 import logoCareConnect from "../../assets/logo_careconnect.png";
-import { getMediaUrl } from "../../api/client";
+import { UserAvatar } from "../ui/UserAvatar";
 import { useAuth } from "../../context/AuthContext";
 
 export function DashboardMobileHeader({ 
@@ -15,16 +15,6 @@ export function DashboardMobileHeader({
   navigate 
 }) {
   const { user } = useAuth();
-
-  const getInitials = (name) => {
-    if (!name) return "U";
-    return name
-      .split(" ")
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((n) => n[0].toUpperCase())
-      .join("");
-  };
 
   const displayName = userName || user?.nombre || localStorage.getItem("user_name") || "Usuario";
   const foto = userFoto || user?.fotoPerfil || user?.foto || localStorage.getItem("user_foto") || localStorage.getItem("user_foto_perfil");
@@ -78,29 +68,14 @@ export function DashboardMobileHeader({
         </div>
 
         {/* Mini Avatar de Usuario */}
-        <div className="relative flex-shrink-0">
-          {foto ? (
-            <img
-              src={getMediaUrl(foto)}
-              alt={displayName}
-              className="w-8 h-8 rounded-full object-cover border border-slate-200 shadow-2xs"
-              onError={(e) => {
-                e.currentTarget.style.display = "none";
-                e.currentTarget.nextElementSibling?.classList.remove("hidden");
-              }}
-            />
-          ) : null}
-          <div
-            className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white shadow-2xs ${
-              foto ? "hidden" : ""
-            }`}
-            style={{
-              backgroundColor: role === "administrador" ? P.accent : P.primary,
-            }}
-          >
-            {getInitials(displayName)}
-          </div>
-        </div>
+        <UserAvatar
+          src={foto}
+          name={displayName}
+          tipo={role}
+          size="xs"
+          shape="rounded-full"
+          className="w-8 h-8 border border-slate-200 shadow-2xs flex-shrink-0"
+        />
       </div>
     </header>
   );

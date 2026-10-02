@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Clock, CheckCircle, FileText, UserCheck, Heart, Star, CheckCircle2 } from "lucide-react";
 import { P, formatARS } from "../../shared";
+import { UserAvatar } from "../ui/UserAvatar";
 import { ModalDetallePaciente } from "../cuidador/ModalDetallePaciente";
 import { CalificarServicioModal } from "../reviews/CalificarServicioModal";
 
@@ -129,17 +130,14 @@ export function SectionSolicitudes({ requests = [], setRequests, onAccept, onRej
                                 <div key={req.id} className="bg-white rounded-3xl p-5 border shadow-sm space-y-4 hover:border-slate-300 transition-colors" style={{ borderColor: P.baseNeutral }}>
                                     <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 pb-3 border-b" style={{ borderColor: P.baseNeutral }}>
                                         <div className="flex items-center gap-3">
-                                            {req.familiarFoto ? (
-                                                <img
-                                                    src={req.familiarFoto}
-                                                    alt={req.family}
-                                                    className="w-12 h-12 rounded-2xl object-cover border border-sky-100 flex-shrink-0 shadow-sm"
-                                                />
-                                            ) : (
-                                                <div className="w-12 h-12 rounded-2xl bg-sky-100 flex items-center justify-center text-sky-700 font-bold text-lg flex-shrink-0">
-                                                    {req.family ? req.family[0] : "F"}
-                                                </div>
-                                            )}
+                                            <UserAvatar
+                                                src={req.familiarFoto}
+                                                name={req.family || "Familiar"}
+                                                tipo="familiar"
+                                                size="md"
+                                                shape="rounded-2xl"
+                                                className="w-12 h-12 border border-sky-100 flex-shrink-0 shadow-sm"
+                                            />
                                             <div>
                                                 <div className="flex items-center gap-2">
                                                     <h3 className="font-bold text-base text-slate-900">{req.family}</h3>

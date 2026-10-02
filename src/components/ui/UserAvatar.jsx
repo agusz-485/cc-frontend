@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { User, Stethoscope, HeartHandshake } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { User, Stethoscope, HeartHandshake, Shield } from "lucide-react";
 import { P } from "../../shared";
 import { getMediaUrl } from "../../api/client";
 
@@ -12,8 +12,8 @@ export function getInitials(name) {
 }
 
 /**
- * Componente uniforme para mostrar fotos de perfil reales subidas por los usuarios.
- * Si el usuario no tiene foto o la URL falla, muestra un avatar con iniciales profesional.
+ * Componente uniforme y resiliente para mostrar fotos de perfil reales subidas por los usuarios.
+ * Si el usuario no tiene foto o la URL falla/404, muestra inmediatamente un avatar con iniciales profesional.
  */
 export function UserAvatar({
   src,
@@ -25,9 +25,18 @@ export function UserAvatar({
   className = "",
 }) {
   const [imageFailed, setImageFailed] = useState(false);
+  const resolvedSrc = getMediaUrl(src);
+
+  // Reiniciar estado de error cuando cambia la fuente o el usuario
+  useEffect(() => {
+    setImageFailed(false);
+  }, [src, resolvedSrc]);
 
   const initials = getInitials(name);
-  const isEnfermero = String(tipo || "").toLowerCase().includes("enfermer");
+  const tipoStr = String(tipo || "").toLowerCase();
+  const isEnfermero = tipoStr.includes("enfermer");
+  const isFamiliar = tipoStr.includes("familiar");
+  const isAdmin = tipoStr.includes("admin");
 
   const sizeClasses = {
     xs: "w-7 h-7 text-[10px]",
@@ -40,7 +49,6 @@ export function UserAvatar({
   };
 
   const selectedSizeClass = sizeClasses[size] || sizeClasses.md;
-  const resolvedSrc = getMediaUrl(src);
   const hasValidImage = Boolean(resolvedSrc && resolvedSrc.length > 0 && !imageFailed);
 
   if (hasValidImage) {
@@ -49,6 +57,8 @@ export function UserAvatar({
         <img
           src={resolvedSrc}
           alt={alt || name}
+          loading="lazy"
+          decoding="async"
           className="w-full h-full object-cover"
           onError={() => setImageFailed(true)}
         />
@@ -56,14 +66,53 @@ export function UserAvatar({
     );
   }
 
-  // Fallback con Iniciales y Estilo CareConnect
+  // Fallback con Iniciales y Estilo CareConnect Curado
+  const getThemeStyles = () => {
+    if (isAdmin) {
+      return {
+        bg: "#0f172a",
+        text: "#ffffff",
+        badgeBg: "#f8fafc",
+        badgeBorder: "#e2e8f0",
+        badgeText: "#0f172a"
+      };
+    }
+    if (isEnfermero) {
+      return {
+        bg: "#0284c7",
+        text: "#ffffff",
+        badgeBg: "#e0f2fe",
+        badgeBorder: "#bae6fd",
+        badgeText: "#0369a1"
+      };
+    }
+    if (isFamiliar) {
+      return {
+        bg: "#6366f1",
+        text: "#ffffff",
+        badgeBg: "#eef2ff",
+        badgeBorder: "#c7d2fe",
+        badgeText: "#4338ca"
+      };
+    }
+    return {
+      bg: P?.primary || "#00A896",
+      text: "#ffffff",
+      badgeBg: "#f0fdfa",
+      badgeBorder: "#ccfbf1",
+      badgeText: "#0d9488"
+    };
+  };
+
+  const theme = getThemeStyles();
+
   return (
     <div
       className={`relative flex flex-col items-center justify-center overflow-hidden font-bold select-none flex-shrink-0 transition-all ${selectedSizeClass} ${shape} ${className}`}
       style={{
-        backgroundColor: isEnfermero ? "#e0f2fe" : "#f0fdfa",
-        color: isEnfermero ? "#0369a1" : "#0d9488",
-        border: `1px solid ${isEnfermero ? "#bae6fd" : "#ccfbf1"}`,
+        backgroundColor: theme.badgeBg,
+        color: theme.badgeText,
+        border: `1px solid ${theme.badgeBorder}`,
       }}
       title={name}
     >
@@ -72,17 +121,22 @@ export function UserAvatar({
           <div
             className="w-16 h-16 rounded-full flex items-center justify-center text-xl font-extrabold shadow-sm"
             style={{
-              backgroundColor: isEnfermero ? "#0284c7" : P.primary,
-              color: "#ffffff",
+              backgroundColor: theme.bg,
+              color: theme.text,
             }}
           >
             {initials}
           </div>
-          <div className="flex items-center gap-1 text-xs font-semibold text-slate-500 mt-1">
+          <div className="flex items-center gap-1 text-xs font-semibold mt-1" style={{ color: theme.badgeText }}>
             {isEnfermero ? (
               <>
                 <Stethoscope className="w-3.5 h-3.5 text-sky-600" />
                 <span>Enfermero Matriculado</span>
+              </>
+            ) : isFamiliar ? (
+              <>
+                <User className="w-3.5 h-3.5 text-indigo-600" />
+                <span>Familiar Contratante</span>
               </>
             ) : (
               <>
@@ -93,7 +147,7 @@ export function UserAvatar({
           </div>
         </div>
       ) : (
-        <span>{initials}</span>
+        <span className="font-extrabold">{initials}</span>
       )}
     </div>
   );

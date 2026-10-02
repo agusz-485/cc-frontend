@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { User } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import logoCareConnect from "../../assets/logo_careconnect.png";
-import { getMediaUrl } from "../../api/client";
+import { UserAvatar } from "../ui/UserAvatar";
 import { P } from "../../shared";
 
 export const Navbar = ({ variant }) => {
@@ -70,20 +70,13 @@ export const Navbar = ({ variant }) => {
                 title="Configuración de Perfil y Cuenta"
               >
                 {/* Avatar o Icono de Perfil */}
-                <div className="relative w-6 h-6 rounded-full overflow-hidden flex items-center justify-center flex-shrink-0 bg-slate-100 border border-slate-200">
-                  {userFoto ? (
-                    <img
-                      src={getMediaUrl(userFoto)}
-                      alt={displayName}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        e.currentTarget.style.display = "none";
-                        e.currentTarget.nextElementSibling?.classList.remove("hidden");
-                      }}
-                    />
-                  ) : null}
-                  <User className={`w-3.5 h-3.5 text-slate-600 ${userFoto ? "hidden" : ""}`} />
-                </div>
+                <UserAvatar
+                  src={userFoto}
+                  name={displayName}
+                  size="xs"
+                  shape="rounded-full"
+                  className="w-6 h-6 border border-slate-200"
+                />
                 <span>Configuración</span>
               </button>
             </div>
