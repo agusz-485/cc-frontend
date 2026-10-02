@@ -66,16 +66,11 @@ api.interceptors.request.use(
     (error) => Promise.reject(error)
 );
 
-// Interceptor para capturar errores globales (ej. token expirado 401)
+// Interceptor para respuestas
 api.interceptors.response.use(
     (response) => response,
     (error) => {
-        if (error.response && error.response.status === 401) {
-            if (!error.config?.url?.includes('/auth/login')) {
-                localStorage.removeItem('token');
-                localStorage.removeItem('user_session');
-            }
-        }
+        // No borrar destructivamente el token en requests de fondo secundarios para evitar invalidar la sesión
         return Promise.reject(error);
     }
 );
