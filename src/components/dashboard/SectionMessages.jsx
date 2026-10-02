@@ -1,8 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Search, MessageSquare, Phone, Send, Loader2, CheckCheck, Clock, Plus, MessageSquarePlus } from "lucide-react";
+import { Search, MessageSquare, Send, Loader2, CheckCheck, Clock, Plus, MessageSquarePlus, ChevronLeft } from "lucide-react";
 import { P } from "../../shared";
-import { getMediaUrl } from "../../api/client";
 import { useAuth } from "../../context/AuthContext";
 import { getConversations, getMessages, sendMessage, startOrGetConversation } from "../../services/chatService";
 import { UserAvatar } from "../ui/UserAvatar";
@@ -49,7 +48,8 @@ export function SectionMessages() {
                     setChats(prev => [newChat, ...prev.filter(c => c.id !== newChat.id)]);
                     setSelectedChatId(newChat.id);
                 }
-            } else if (!selectedChatId && list.length > 0) {
+            } else if (!selectedChatId && list.length > 0 && window.innerWidth >= 768) {
+                // En desktop auto-seleccionar el primer chat; en móvil mantener la lista
                 setSelectedChatId(list[0].id);
             }
         } catch (err) {
@@ -155,9 +155,14 @@ export function SectionMessages() {
     );
 
     return (
-        <div className="flex-1 flex overflow-hidden bg-slate-50">
-            {/* Sidebar de Chats */}
-            <div className="w-80 border-r flex flex-col bg-white flex-shrink-0" style={{ borderColor: P.baseNeutral }}>
+        <div className="flex-1 flex overflow-hidden bg-slate-50 relative">
+            {/* Sidebar de Lista de Chats (En móvil se oculta cuando hay un chat activo) */}
+            <div 
+                className={`w-full md:w-80 border-r flex flex-col bg-white flex-shrink-0 transition-all ${
+                    selectedChatId ? "hidden md:flex" : "flex"
+                }`} 
+                style={{ borderColor: P.baseNeutral }}
+            >
                 {/* Cabecera con Botón de Nueva Conversación */}
                 <div className="p-3.5 border-b flex flex-col gap-2.5" style={{ borderColor: P.baseNeutral }}>
                     <div className="flex items-center justify-between">
@@ -246,7 +251,7 @@ export function SectionMessages() {
 
             {/* Área Principal de Mensajes */}
             {!activeChat ? (
-                <div className="flex-1 flex flex-col items-center justify-center text-center p-8 bg-slate-50/50">
+                <div className={`flex-1 flex-col items-center justify-center text-center p-8 bg-slate-50/50 ${selectedChatId ? "flex" : "hidden md:flex"}`}>
                     <div className="max-w-md w-full bg-white p-8 rounded-3xl border shadow-sm flex flex-col items-center" style={{ borderColor: P.baseNeutral }}>
                         <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4 bg-teal-50 text-teal-700">
                             <MessageSquare className="w-8 h-8" />
@@ -258,7 +263,7 @@ export function SectionMessages() {
                         <button
                             type="button"
                             onClick={() => setIsNewChatModalOpen(true)}
-                            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-white shadow-sm hover:opacity-95 transition-all"
+                            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-white shadow-sm hover:opacity-95 transition-all cursor-pointer"
                             style={{ backgroundColor: P.primary }}
                         >
                             <MessageSquarePlus className="w-4 h-4" />
@@ -267,40 +272,39 @@ export function SectionMessages() {
                     </div>
                 </div>
             ) : (
-                <div className="flex-1 flex flex-col overflow-hidden bg-slate-50/40">
+                <div className={`flex-1 flex-col overflow-hidden bg-slate-50/40 ${selectedChatId ? "flex" : "hidden md:flex"}`}>
                     {/* Header del Chat Activo */}
-                    <div className="px-6 py-3.5 border-b flex items-center justify-between bg-white shadow-2xs" style={{ borderColor: P.baseNeutral }}>
-                        <div className="flex items-center gap-3">
+                    <div className="px-4 sm:px-6 py-3 border-b flex items-center justify-between bg-white shadow-2xs" style={{ borderColor: P.baseNeutral }}>
+                        <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+                            {/* Botón Volver en móvil */}
+                            <button
+                                type="button"
+                                onClick={() => setSelectedChatId(null)}
+                                className="p-1.5 -ml-1.5 rounded-xl text-slate-600 hover:bg-slate-100 md:hidden flex items-center justify-center cursor-pointer flex-shrink-0"
+                                title="Volver a la lista de conversaciones"
+                            >
+                                <ChevronLeft className="w-5 h-5" />
+                            </button>
+
                             <UserAvatar
                                 src={activeChat.fotoPerfil || activeChat.image}
                                 name={activeChat.name}
                                 size="sm"
                                 shape="rounded-full"
                             />
-                            <div>
-                                <p className="text-sm font-bold text-slate-900">{activeChat.name}</p>
+                            <div className="min-w-0">
+                                <p className="text-sm font-bold text-slate-900 truncate">{activeChat.name}</p>
                                 {activeChat.role && (
-                                    <p className="text-[11px] text-slate-500 font-medium">
+                                    <p className="text-[11px] text-slate-500 font-medium truncate">
                                         {activeChat.role}
                                     </p>
                                 )}
                             </div>
                         </div>
-
-                        {activeChat.phone && (
-                            <a 
-                                href={`tel:${activeChat.phone}`}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer" 
-                                style={{ borderColor: P.baseNeutral }}
-                            >
-                                <Phone className="w-3.5 h-3.5 text-teal-700" /> 
-                                <span>Llamar</span>
-                            </a>
-                        )}
                     </div>
 
                     {/* Contenedor de Mensajes */}
-                    <div ref={chatRef} className="flex-1 overflow-y-auto p-6 space-y-3">
+                    <div ref={chatRef} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3">
                         {currentMessages.length === 0 ? (
                             <div className="flex flex-col items-center justify-center h-full text-center text-slate-400 gap-2">
                                 <Clock className="w-8 h-8 text-slate-300" />
@@ -312,7 +316,7 @@ export function SectionMessages() {
                                 return (
                                     <div key={m.id} className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
                                         <div 
-                                            className={`max-w-[75%] sm:max-w-[65%] px-4 py-2.5 rounded-2xl text-sm shadow-xs ${
+                                            className={`max-w-[85%] sm:max-w-[65%] px-4 py-2.5 rounded-2xl text-xs sm:text-sm shadow-xs ${
                                                 isUser 
                                                     ? 'text-white rounded-tr-xs' 
                                                     : 'bg-white text-slate-800 border border-slate-200/80 rounded-tl-xs'
@@ -334,7 +338,7 @@ export function SectionMessages() {
                     </div>
 
                     {/* Input de Envío de Mensaje */}
-                    <div className="p-4 border-t bg-white shadow-xs" style={{ borderColor: P.baseNeutral }}>
+                    <div className="p-3 sm:p-4 border-t bg-white shadow-xs" style={{ borderColor: P.baseNeutral }}>
                         <div className="flex gap-2 items-center max-w-4xl mx-auto">
                             <input 
                                 value={text} 
@@ -346,18 +350,18 @@ export function SectionMessages() {
                                     }
                                 }} 
                                 placeholder="Escribe un mensaje para coordinar la atención..." 
-                                className="flex-1 px-4 py-3 rounded-2xl border text-sm outline-none bg-slate-50 focus:bg-white focus:border-teal-600 transition-colors" 
+                                className="flex-1 px-3.5 sm:px-4 py-2.5 sm:py-3 rounded-2xl border text-xs sm:text-sm outline-none bg-slate-50 focus:bg-white focus:border-teal-600 transition-colors" 
                                 style={{ borderColor: P.baseNeutral }} 
                             />
                             <button 
                                 type="button"
                                 onClick={handleSend} 
                                 disabled={!text.trim() || sending}
-                                className="p-3 rounded-2xl text-white transition-all hover:opacity-90 active:scale-95 disabled:opacity-40 cursor-pointer shadow-sm flex items-center justify-center" 
+                                className="p-2.5 sm:p-3 rounded-2xl text-white transition-all hover:opacity-90 active:scale-95 disabled:opacity-40 cursor-pointer shadow-sm flex items-center justify-center flex-shrink-0" 
                                 style={{ backgroundColor: P.primary }}
                                 title="Enviar mensaje"
                             >
-                                {sending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
+                                {sending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-4 h-4 sm:w-5 sm:h-5" />}
                             </button>
                         </div>
                     </div>
