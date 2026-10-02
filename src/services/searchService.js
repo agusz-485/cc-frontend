@@ -1,4 +1,4 @@
-import api from "../api/client";
+import api, { getMediaUrl } from "../api/client";
 
 export const encodeScheduleInDescription = (bio, schedule) => {
   const cleanBio = (bio || "").replace(/<!--\s*SCHEDULE_DATA:[\s\S]*?-->/g, "").trim();
@@ -45,12 +45,15 @@ export const searchProfessionals = async () => {
         const nombreCompleto = `${c.nombre || ""} ${c.apellido || ""}`.trim() || "Cuidador Profesional";
         const rate = Number(c.precioHora) || Number(c.tarifaHora) || 3000;
         const { bio: cleanBio } = decodeScheduleFromDescription(c.descripcion);
+        const totalReviews = Number(c.totalResenas !== undefined ? c.totalResenas : (c.totalResenias !== undefined ? c.totalResenias : (c.reviews || 0)));
+        const avgRating = Number(c.calificacionPromedio !== undefined ? c.calificacionPromedio : (c.rating || 5.0));
+
         return {
           ...c,
           id,
           name: nombreCompleto,
-          rating: c.calificacionPromedio || 5.0,
-          reviews: c.totalResenas || 0,
+          rating: avgRating,
+          reviews: totalReviews,
           hourlyRate: rate,
           dailyRate: rate * 8,
           location: c.zonaPrincipal || "Argentina",
@@ -60,7 +63,7 @@ export const searchProfessionals = async () => {
           description: cleanBio,
           verified: c.disponible !== undefined ? c.disponible : true,
           tipo: "cuidador",
-          image: c.fotoPerfil || null,
+          image: getMediaUrl(c.fotoPerfil),
         };
       });
     } catch (e) {}
@@ -73,12 +76,15 @@ export const searchProfessionals = async () => {
         const nombreCompleto = `${n.nombre || ""} ${n.apellido || ""}`.trim() || "Enfermero Matriculado";
         const rate = Number(n.precioHora) || Number(n.tarifaHora) || 4500;
         const { bio: cleanBio } = decodeScheduleFromDescription(n.descripcion);
+        const totalReviews = Number(n.totalResenas !== undefined ? n.totalResenas : (n.totalResenias !== undefined ? n.totalResenias : (n.reviews || 0)));
+        const avgRating = Number(n.calificacionPromedio !== undefined ? n.calificacionPromedio : (n.rating || 5.0));
+
         return {
           ...n,
           id,
           name: nombreCompleto,
-          rating: n.calificacionPromedio || 5.0,
-          reviews: n.totalResenas || 0,
+          rating: avgRating,
+          reviews: totalReviews,
           hourlyRate: rate,
           dailyRate: rate * 8,
           location: n.zonaPrincipal || "Argentina",
@@ -89,12 +95,33 @@ export const searchProfessionals = async () => {
           description: cleanBio,
           verified: n.visible !== undefined ? n.visible : true,
           tipo: "enfermero",
-          image: n.fotoPerfil || null,
+          image: getMediaUrl(n.fotoPerfil),
         };
       });
     } catch (e) {}
 
-    return [...caregivers, ...nurses];
+    const allPros = [...caregivers, ...nurses];
+
+    // Enriquecer en paralelo con métricas en vivo de reseñas
+    const enriched = await Promise.all(
+      allPros.map(async (p) => {
+        try {
+          const metRes = await api.get(`/resenias/cuidador/${p.id}/metricas`);
+          if (metRes?.data) {
+            const count = Number(metRes.data.totalResenias ?? metRes.data.totalResenas ?? 0);
+            const score = (count > 0 && metRes.data.promedio !== undefined) ? Number(metRes.data.promedio) : (p.rating || 5.0);
+            return {
+              ...p,
+              reviews: count,
+              rating: score,
+            };
+          }
+        } catch {}
+        return p;
+      })
+    );
+
+    return enriched;
   } catch (err) {
     return [];
   }
@@ -133,6 +160,14 @@ export const getProfessionalById = async (id) => {
     }
   } catch {}
 
+  let metrics = null;
+  try {
+    const metRes = await api.get(`/resenias/cuidador/${targetId}/metricas`);
+    if (metRes?.data) {
+      metrics = metRes.data;
+    }
+  } catch {}
+
   const mergeSchedule = (baseSched) => {
     const s = baseSched || { blockedWeekDays: [], blockedDates: [], blockedWeeklySlots: {}, blockedDateSlots: [] };
     const dateSlots = [...(Array.isArray(s.blockedDateSlots) ? s.blockedDateSlots : []), ...bookedSlots];
@@ -149,18 +184,26 @@ export const getProfessionalById = async (id) => {
       const mergedCerts = (c.certificaciones && c.certificaciones.length > 0) ? c.certificaciones : (localProfile.certs || []);
       const mergedZones = (c.zonasCobertura && c.zonasCobertura.length > 0) ? c.zonasCobertura : (localProfile.coverageZones || [c.zonaPrincipal || "Argentina"]);
 
+      const backendReviews = Number(c.totalResenas !== undefined ? c.totalResenas : (c.totalResenias !== undefined ? c.totalResenias : (c.reviews || 0)));
+      const finalReviews = metrics
+        ? Number(metrics.totalResenias ?? metrics.totalResenas ?? 0)
+        : backendReviews;
+      const finalRating = (finalReviews > 0 && metrics?.promedio !== undefined)
+        ? Number(metrics.promedio)
+        : (c.calificacionPromedio !== undefined ? Number(c.calificacionPromedio) : (c.rating || 5.0));
+
       return {
         id: c.id || targetId,
         name: `${c.nombre || ""} ${c.apellido || ""}`.trim() || "Cuidador Profesional",
-        rating: c.calificacionPromedio || 5.0,
-        reviews: c.totalResenas || 0,
+        rating: finalRating,
+        reviews: finalReviews,
         hourlyRate: rate,
         dailyRate: rate * 8,
         location: c.zonaPrincipal || "Argentina",
         specialties: c.especialidades || [],
         bio: cleanBio || "Cuidador profesional con experiencia en asistencia y cuidado integral.",
         experience: c.aniosExperiencia || 3,
-        image: c.fotoPerfil || null,
+        image: getMediaUrl(c.fotoPerfil),
         coverageZones: mergedZones,
         certifications: mergedCerts,
         schedule: activeSched,
@@ -179,11 +222,19 @@ export const getProfessionalById = async (id) => {
         const mergedCerts = (n.certificaciones && n.certificaciones.length > 0) ? n.certificaciones : (localProfile.certs || []);
         const mergedZones = (n.zonasCobertura && n.zonasCobertura.length > 0) ? n.zonasCobertura : (localProfile.coverageZones || [n.zonaPrincipal || "Argentina"]);
 
+        const backendReviewsN = Number(n.totalResenas !== undefined ? n.totalResenas : (n.totalResenias !== undefined ? n.totalResenias : (n.reviews || 0)));
+        const finalReviewsN = metrics
+          ? Number(metrics.totalResenias ?? metrics.totalResenas ?? 0)
+          : backendReviewsN;
+        const finalRatingN = (finalReviewsN > 0 && metrics?.promedio !== undefined)
+          ? Number(metrics.promedio)
+          : (n.calificacionPromedio !== undefined ? Number(n.calificacionPromedio) : (n.rating || 5.0));
+
         return {
           id: n.id || targetId,
           name: `${n.nombre || ""} ${n.apellido || ""}`.trim() || "Enfermero Matriculado",
-          rating: n.calificacionPromedio || 5.0,
-          reviews: n.totalResenas || 0,
+          rating: finalRatingN,
+          reviews: finalReviewsN,
           hourlyRate: rate,
           dailyRate: rate * 8,
           location: n.zonaPrincipal || "Argentina",
@@ -191,7 +242,7 @@ export const getProfessionalById = async (id) => {
           specialties: ["Enfermería General", "Atención Clínica Domiciliaria"],
           bio: cleanBio || "Enfermero matriculado capacitado en atención clínica.",
           experience: n.aniosExperiencia || 3,
-          image: n.fotoPerfil || null,
+          image: getMediaUrl(n.fotoPerfil),
           coverageZones: mergedZones,
           certifications: mergedCerts,
           schedule: activeSched,

@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Users, UserCheck, Clock, Ban, RefreshCw, CheckCircle, ShieldCheck, HeartHandshake, Stethoscope } from "lucide-react";
+import { Users, UserCheck, Clock, Ban, RefreshCw, CheckCircle, ShieldCheck, HeartHandshake, Stethoscope, AlertTriangle } from "lucide-react";
 import { adminService } from "../../services/adminService";
+import { reportService } from "../../services/reportService";
 import UserModerationTable from "../../components/admin/UserModerationTable";
+import ReportModerationTable from "../../components/admin/ReportModerationTable";
 import AdminSidebar from "../../components/admin/AdminSidebar";
 import DashboardMobileHeader from "../../components/dashboard/DashboardMobileHeader";
 import { P } from "../../components/shared";
@@ -12,6 +14,7 @@ const TAB_TITLES = {
     inicio_admin: "Métricas",
     moderacion: "Verificaciones",
     gestion_usuarios: "Usuarios",
+    reportes: "Reportes e Incidentes",
 };
 
 export default function AdminDashboard() {
@@ -20,6 +23,7 @@ export default function AdminDashboard() {
     const [activeTab, setActiveTab] = useState("inicio_admin");
     const [metricas, setMetricas] = useState(null);
     const [usuarios, setUsuarios] = useState([]);
+    const [reportes, setReportes] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -28,12 +32,14 @@ export default function AdminDashboard() {
         try {
             setLoading(true);
             setError(null);
-            const [resMetricas, resUsuarios] = await Promise.all([
+            const [resMetricas, resUsuarios, resReportes] = await Promise.all([
                 adminService.getMetricas(),
                 adminService.getUsuarios(),
+                reportService.getReportesAdmin().catch(() => []),
             ]);
             setMetricas(resMetricas);
             setUsuarios(resUsuarios);
+            setReportes(Array.isArray(resReportes) ? resReportes : []);
         } catch (err) {
             console.error(err);
             setError("No se pudo cargar la información del panel administrativo.");
@@ -124,6 +130,7 @@ export default function AdminDashboard() {
                                     {activeTab === "inicio_admin" && "Panel de Métricas"}
                                     {activeTab === "moderacion" && "Verificaciones Profesionales"}
                                     {activeTab === "gestion_usuarios" && "Gestión de Usuarios"}
+                                    {activeTab === "reportes" && "Reportes e Incidentes"}
                                 </h1>
                                 <p className="text-xs sm:text-sm mt-0.5" style={{ color: P?.neutralDark || "#64748b" }}>
                                     Supervisión en tiempo real y moderación del sistema
@@ -293,6 +300,16 @@ export default function AdminDashboard() {
                                     onApprove={handleApprove}
                                     onSuspend={handleSuspend}
                                     loading={loading}
+                                />
+                            </div>
+                        )}
+
+                        {/* VISTA 4: REPORTES E INCIDENTES */}
+                        {activeTab === "reportes" && (
+                            <div className="space-y-3">
+                                <ReportModerationTable
+                                    reports={reportes}
+                                    onRefresh={cargarDatos}
                                 />
                             </div>
                         )}

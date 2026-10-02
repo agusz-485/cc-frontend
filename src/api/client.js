@@ -18,33 +18,48 @@ const getBaseUrl = () => {
 };
 
 /**
- * Convierte rutas relativas o URLs desalineadas de uploads a URLs absolutas funcionales hacia el backend.
+ * Convierte rutas relativas o URLs de uploads a URLs funcionales hacia el backend correcto (local o producción),
+ * preservando Data URIs, Blobs y URLs externas de CDNs.
  */
 export const getMediaUrl = (url) => {
     if (!url || typeof url !== 'string') return '';
-    let clean = url.trim();
-    if (!clean) return '';
+    const clean = url.trim();
+    if (!clean || clean === 'null' || clean === 'undefined') return '';
     
     // Si ya es un data URI o blob local en memoria
     if (clean.startsWith('data:') || clean.startsWith('blob:')) {
         return clean;
     }
 
-    // Corregir URLs guardadas que apuntaban por error al dominio de frontend o localhost
-    if (clean.includes('vercel.app/api/v1/uploads') || clean.includes('localhost:5173/api/v1/uploads') || clean.includes('vercel.app/uploads')) {
-        clean = clean.replace(/https?:\/\/[^\/]+/, BACKEND_PROD_URL);
-        return clean;
+    const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+
+    // Detectar si es un archivo subido al backend de CareConnect
+    const uploadMatch = clean.match(/(?:https?:\/\/[^\/]+)?(?:\/api\/v1)?\/?uploads\/(.+)$/);
+    if (uploadMatch && uploadMatch[1]) {
+        const subPath = uploadMatch[1].replace(/^\/+/, '');
+        if (isLocal) {
+            return `/api/v1/uploads/${subPath}`;
+        }
+        return `${BACKEND_PROD_URL}/api/v1/uploads/${subPath}`;
     }
 
-    // Si ya es URL completa HTTP/HTTPS hacia el backend o cloud storage
+    // Ruta relativa pura comenzando con /api/v1/
+    if (clean.startsWith('/api/v1/')) {
+        if (isLocal) return clean;
+        return `${BACKEND_PROD_URL}${clean}`;
+    }
+
+    // URL externa completa (Unsplash, Google, UI-Avatars, Cloudinary, etc.)
     if (clean.startsWith('http://') || clean.startsWith('https://')) {
         return clean;
     }
 
-    // Si es una ruta relativa (/api/v1/uploads/..., /uploads/...)
-    const base = getBaseUrl();
-    const origin = base.startsWith('http') ? new URL(base).origin : BACKEND_PROD_URL;
-    return clean.startsWith('/') ? `${origin}${clean}` : `${origin}/${clean}`;
+    // Fallback general para rutas relativas
+    const normalized = clean.startsWith('/') ? clean : `/${clean}`;
+    if (isLocal) {
+        return normalized;
+    }
+    return `${BACKEND_PROD_URL}${normalized}`;
 };
 
 const api = axios.create({
@@ -66,16 +81,11 @@ api.interceptors.request.use(
     (error) => Promise.reject(error)
 );
 
-// Interceptor para capturar errores globales (ej. token expirado 401)
+// Interceptor para respuestas
 api.interceptors.response.use(
     (response) => response,
     (error) => {
-        if (error.response && error.response.status === 401) {
-            if (!error.config?.url?.includes('/auth/login')) {
-                localStorage.removeItem('token');
-                localStorage.removeItem('user_session');
-            }
-        }
+        // No borrar destructivamente el token en requests de fondo secundarios para evitar invalidar la sesión
         return Promise.reject(error);
     }
 );

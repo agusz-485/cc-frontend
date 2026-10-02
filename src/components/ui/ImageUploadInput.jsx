@@ -2,6 +2,7 @@ import { useState, useRef } from "react";
 import { Upload, X, FileText, Image as ImageIcon, Loader2 } from "lucide-react";
 import { P } from "../../shared";
 import { uploadFile } from "../../services/uploadService";
+import { getMediaUrl } from "../../api/client";
 
 export function ImageUploadInput({
   value,
@@ -78,7 +79,7 @@ export function ImageUploadInput({
             ) : (
               <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 border flex items-center justify-center bg-slate-100" style={{ borderColor: P.baseNeutral }}>
                 <img
-                  src={value}
+                  src={getMediaUrl(value)}
                   alt="Vista previa"
                   className="w-full h-full object-cover"
                   onError={(e) => {
@@ -93,7 +94,7 @@ export function ImageUploadInput({
                 {isPdf ? "Documento PDF Adjunto" : "Archivo cargado"}
               </p>
               <a
-                href={value}
+                href={getMediaUrl(value)}
                 target="_blank"
                 rel="noreferrer"
                 className="text-[11px] font-semibold text-blue-600 hover:underline truncate block"

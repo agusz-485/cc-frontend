@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Calendar, DollarSign, Clock, Star, CheckCircle, AlertCircle, ArrowUpRight, FileText } from "lucide-react";
 import { P, formatARS } from "../../shared";
+import { UserAvatar } from "../ui/UserAvatar";
 import { ModalDetallePaciente } from "../cuidador/ModalDetallePaciente";
 
 export function SectionInicioCuidador({
@@ -149,17 +150,14 @@ export function SectionInicioCuidador({
                                         className="flex items-center gap-3 p-3 rounded-2xl border border-transparent hover:border-slate-200 transition-all cursor-pointer group"
                                         style={{ backgroundColor: P.neutralLight }}
                                     >
-                                        {req.familiarFoto ? (
-                                            <img
-                                                src={req.familiarFoto}
-                                                alt={req.family}
-                                                className="w-10 h-10 rounded-xl object-cover border border-sky-100 flex-shrink-0"
-                                            />
-                                        ) : (
-                                            <div className="w-10 h-10 rounded-xl bg-sky-100 flex items-center justify-center font-bold text-sm text-sky-700 flex-shrink-0">
-                                                {req.family ? req.family[0] : "F"}
-                                            </div>
-                                        )}
+                                        <UserAvatar
+                                            src={req.familiarFoto}
+                                            name={req.family || "Familiar"}
+                                            tipo="familiar"
+                                            size="sm"
+                                            shape="rounded-xl"
+                                            className="w-10 h-10 border border-sky-100 flex-shrink-0"
+                                        />
                                         <div className="flex-1 min-w-0">
                                             <p className="text-sm font-semibold truncate group-hover:text-sky-700 transition-colors" style={{ color: P.dark }}>
                                                 {req.patient} · <span className="text-xs font-normal text-slate-500">Familiar: {req.family}</span>

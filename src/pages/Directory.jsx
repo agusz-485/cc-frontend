@@ -1,13 +1,14 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, MapPin, Filter } from "lucide-react";
-import { P, formatARS } from "../shared";
+import { Search, MapPin, Filter, ArrowUpDown } from "lucide-react";
+import { P } from "../shared";
 import { searchProfessionals } from "../services/searchService";
 import { getFavoriteCaregivers, toggleFavoriteCaregiver } from "../services/favoritesService";
 import { useAuth } from "../context/AuthContext";
 import { Navbar } from "../components/layout/Navbar";
 import { FilterSidebar } from "../components/directory/FilterSidebar";
 import { ProfessionalCard } from "../components/directory/ProfessionalCard";
+import { DirectorySkeleton } from "../components/directory/DirectorySkeleton";
 
 export default function Directory() {
   const navigate = useNavigate();
@@ -20,21 +21,39 @@ export default function Directory() {
   const [careTypes, setCareTypes] = useState([]);
   const [sortBy, setSortBy] = useState("rating");
   const [showFilters, setShowFilters] = useState(true);
+  const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState("Todas las ubicaciones");
   const [professionals, setProfessionals] = useState([]);
   const [selectedType, setSelectedType] = useState("todos");
   const [favorites, setFavorites] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const locationOptions = ["Todas las ubicaciones", "Palermo", "Belgrano", "Recoleta", "Almagro", "Caballito", "San Telmo", "Lanús", "Quilmes", "San Isidro"];
   const careTypeOptions = ["Alzheimer", "Parkinson", "Post-operatorio", "Rehabilitación", "Cuidados Paliativos", "Acompañamiento"];
 
   // Cargar cuidadores desde el servicio
   useEffect(() => {
+    let isMounted = true;
     const fetchList = async () => {
-      const data = await searchProfessionals();
-      setProfessionals(data);
+      setLoading(true);
+      try {
+        const data = await searchProfessionals();
+        if (isMounted) {
+          setProfessionals(data || []);
+        }
+      } catch (err) {
+        console.error("Error al cargar profesionales en el directorio:", err);
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
     };
     fetchList();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   // Cargar favoritos del usuario
@@ -67,6 +86,15 @@ export default function Directory() {
 
   const activeFilterCount = careTypes.length + (minRating > 0 ? 1 : 0) + (priceMax < 100000 ? 1 : 0) + (selectedType !== "todos" ? 1 : 0);
 
+  const handleToggleFilterButton = () => {
+    // En móviles abre el drawer modal, en desktop togglea la barra lateral
+    if (window.innerWidth < 1024) {
+      setIsMobileFilterOpen(true);
+    } else {
+      setShowFilters(!showFilters);
+    }
+  };
+
   return (
     <div style={{ backgroundColor: "#f8fbfd", minHeight: "100vh" }}>
       {/* 1. Header / Navbar Superior con Logo Oficial y Botón de Configuración */}
@@ -74,106 +102,123 @@ export default function Directory() {
 
       {/* 2. Barra de Búsqueda y Filtros Sticky */}
       <div className="sticky top-16 z-40 border-b bg-white/95 backdrop-blur-md shadow-2xs" style={{ borderColor: P.baseNeutral }}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5">
-          <div className="flex gap-3 items-center flex-wrap">
-            <div className="flex items-center gap-2 flex-1 min-w-52 px-4 py-2.5 rounded-xl border bg-slate-50" style={{ borderColor: P.baseNeutral }}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+          <div className="flex flex-col sm:flex-row gap-2.5 sm:gap-3 items-stretch sm:items-center">
+            {/* Input de Búsqueda */}
+            <div className="flex items-center gap-2 flex-1 min-w-0 px-3.5 py-2 sm:py-2.5 rounded-xl border bg-slate-50" style={{ borderColor: P.baseNeutral }}>
               <Search className="w-4 h-4 flex-shrink-0 text-slate-400" />
               <input 
                 value={searchQuery} 
                 onChange={(e) => setSearchQuery(e.target.value)} 
                 placeholder="Buscar por nombre o ciudad..." 
-                className="flex-1 bg-transparent text-sm outline-none text-slate-800" 
+                className="flex-1 bg-transparent text-xs sm:text-sm outline-none text-slate-800 placeholder-slate-400 min-w-0" 
               />
             </div>
 
-            <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl border bg-slate-50" style={{ borderColor: P.baseNeutral }}>
-              <MapPin className="w-4 h-4 text-slate-400" />
-              <select 
-                value={selectedLocation} 
-                onChange={(e) => setSelectedLocation(e.target.value)} 
-                className="bg-transparent text-sm outline-none cursor-pointer font-medium text-slate-700 bg-white"
+            {/* Controles de Filtros y Orden (Fila compacta en móvil) */}
+            <div className="flex items-center gap-2 overflow-x-auto pb-0.5 sm:pb-0">
+              {/* Selector de Ubicación */}
+              <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl border bg-slate-50 flex-shrink-0" style={{ borderColor: P.baseNeutral }}>
+                <MapPin className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+                <select 
+                  value={selectedLocation} 
+                  onChange={(e) => setSelectedLocation(e.target.value)} 
+                  className="bg-transparent text-xs outline-none cursor-pointer font-medium text-slate-700 bg-white"
+                >
+                  {locationOptions.map((loc) => (
+                    <option key={loc} value={loc}>{loc}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Botón Filtros */}
+              <button 
+                type="button"
+                onClick={handleToggleFilterButton} 
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl font-bold text-xs transition-all hover:bg-slate-100 cursor-pointer flex-shrink-0" 
+                style={{
+                  backgroundColor: showFilters ? P.primary : "#f0f4f6",
+                  color: showFilters ? "white" : P.dark,
+                  border: `1.5px solid ${showFilters ? P.primary : P.baseNeutral}`,
+                }}
               >
-                {locationOptions.map((loc) => (
-                  <option key={loc} value={loc}>{loc}</option>
-                ))}
-              </select>
+                <Filter className="w-3.5 h-3.5" />
+                <span>Filtros</span>
+                {activeFilterCount > 0 && (
+                  <span className="w-4 h-4 rounded-full text-[10px] flex items-center justify-center font-extrabold bg-amber-500 text-white">
+                    {activeFilterCount}
+                  </span>
+                )}
+              </button>
+
+              {/* Selector de Orden */}
+              <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl border bg-white flex-shrink-0" style={{ borderColor: P.baseNeutral }}>
+                <ArrowUpDown className="w-3.5 h-3.5 text-slate-400 hidden sm:block" />
+                <select 
+                  value={sortBy} 
+                  onChange={(e) => setSortBy(e.target.value)} 
+                  className="bg-transparent text-xs outline-none cursor-pointer text-slate-700 font-bold" 
+                >
+                  <option value="rating">Mejor valorados</option>
+                  <option value="price_asc">Precio: menor a mayor</option>
+                  <option value="price_desc">Precio: mayor a menor</option>
+                </select>
+              </div>
             </div>
-
-            <button 
-              onClick={() => setShowFilters(!showFilters)} 
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all hover:bg-slate-100 cursor-pointer" 
-              style={{
-                backgroundColor: showFilters ? P.primary : "#f0f4f6",
-                color: showFilters ? "white" : P.dark,
-                border: `1.5px solid ${showFilters ? P.primary : P.baseNeutral}`,
-              }}
-            >
-              <Filter className="w-4 h-4" />
-              Filtros
-              {activeFilterCount > 0 && (
-                <span className="w-5 h-5 rounded-full text-xs flex items-center justify-center font-bold bg-amber-500 text-white">
-                  {activeFilterCount}
-                </span>
-              )}
-            </button>
-
-            <select 
-              value={sortBy} 
-              onChange={(e) => setSortBy(e.target.value)} 
-              className="px-4 py-2.5 rounded-xl text-sm outline-none cursor-pointer border bg-white text-slate-700 font-bold" 
-              style={{ borderColor: P.baseNeutral }}
-            >
-              <option value="rating">Mejor valorados</option>
-              <option value="price_asc">Precio: menor a mayor</option>
-              <option value="price_desc">Precio: mayor a menor</option>
-            </select>
           </div>
         </div>
       </div>
 
+      {/* 3. Contenido Principal con Sidebar y Grid */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="flex gap-6 items-start">
-          {/* Filter Sidebar component */}
-          {showFilters && (
-            <FilterSidebar 
-              priceMax={priceMax}
-              setPriceMax={setPriceMax}
-              minRating={minRating}
-              setMinRating={setMinRating}
-              careTypes={careTypes}
-              setCareTypes={setCareTypes}
-              careTypeOptions={careTypeOptions}
-              selectedType={selectedType}
-              setSelectedType={setSelectedType}
-            />
-          )}
+          {/* Sidebar de Filtros (Desktop Fijo + Modal Móvil) */}
+          <FilterSidebar 
+            priceMax={priceMax}
+            setPriceMax={setPriceMax}
+            minRating={minRating}
+            setMinRating={setMinRating}
+            careTypes={careTypes}
+            setCareTypes={setCareTypes}
+            careTypeOptions={careTypeOptions}
+            selectedType={selectedType}
+            setSelectedType={setSelectedType}
+            isMobileOpen={isMobileFilterOpen}
+            onMobileClose={() => setIsMobileFilterOpen(false)}
+          />
 
-          {/* Grid list of professionals */}
+          {/* Grid de Profesionales o Pantalla de Carga Skeleton */}
           <div className="flex-1 min-w-0">
-            <div className="flex items-center justify-between mb-5">
-              <p className="text-sm font-medium text-slate-500 text-left">
-                <span className="font-extrabold text-slate-800">{sorted.length}</span> profesionales encontrados
-              </p>
-            </div>
+            {loading ? (
+              <DirectorySkeleton />
+            ) : (
+              <>
+                <div className="flex items-center justify-between mb-5">
+                  <p className="text-xs sm:text-sm font-medium text-slate-500 text-left">
+                    <span className="font-extrabold text-slate-800">{sorted.length}</span> {sorted.length === 1 ? "profesional encontrado" : "profesionales encontrados"}
+                  </p>
+                </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-              {sorted.map((caregiver) => (
-                <ProfessionalCard 
-                  key={caregiver.id} 
-                  caregiver={caregiver} 
-                  isFavorite={favorites.some((f) => Number(f.id) === Number(caregiver.id))}
-                  onToggleFavorite={handleToggleFavorite}
-                  onSelect={(c) => navigate(`/cuidador/${c.id}`)}
-                />
-              ))}
-            </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+                  {sorted.map((caregiver) => (
+                    <ProfessionalCard 
+                      key={caregiver.id} 
+                      caregiver={caregiver} 
+                      isFavorite={favorites.some((f) => Number(f.id) === Number(caregiver.id))}
+                      onToggleFavorite={handleToggleFavorite}
+                      onSelect={(c) => navigate(`/cuidador/${c.id}`)}
+                    />
+                  ))}
+                </div>
 
-            {sorted.length === 0 && (
-              <div className="text-center py-20 bg-white rounded-3xl border border-dashed p-6" style={{ borderColor: P.baseNeutral }}>
-                <Search className="w-12 h-12 mx-auto mb-4 text-slate-300" />
-                <p className="font-bold text-slate-700">No se encontraron profesionales</p>
-                <p className="text-xs text-slate-500 mt-1">Intenta ajustar los filtros de búsqueda</p>
-              </div>
+                {sorted.length === 0 && (
+                  <div className="text-center py-20 bg-white rounded-3xl border border-dashed p-6" style={{ borderColor: P.baseNeutral }}>
+                    <Search className="w-12 h-12 mx-auto mb-4 text-slate-300" />
+                    <p className="font-bold text-slate-700">No se encontraron profesionales</p>
+                    <p className="text-xs text-slate-500 mt-1">Intenta ajustar o limpiar los filtros de búsqueda</p>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>

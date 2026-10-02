@@ -59,8 +59,30 @@ export function CuidadorProfileTab({ onProfileUpdate, role }) {
             setBioPersonal(userData.descripcion || localProfile.bioPersonal || localStorage.getItem("user_bio_personal") || "");
             setDisponibilidadContacto(localProfile.disponibilidadContacto || localStorage.getItem("user_disp_contacto") || "Horario comercial (8:00 a 20:00)");
         } catch (err) {
-            console.error("Error al cargar perfil profesional:", err);
-            setError("No se pudo cargar la información del perfil desde el servidor.");
+            console.warn("No se pudo cargar el perfil desde el servidor, cargando datos locales:", err);
+            const userId = user?.id || localStorage.getItem("user_id") || "current";
+            let localProfile = {};
+            try {
+                const stored = localStorage.getItem(`user_profile_${userId}`);
+                if (stored) localProfile = JSON.parse(stored);
+            } catch {}
+
+            let userDisplayName = user?.nombre || user?.name || localProfile.nombre || localStorage.getItem("user_name") || "";
+            if (user?.apellido && !userDisplayName.toLowerCase().includes(user?.apellido?.toLowerCase())) {
+                userDisplayName = `${userDisplayName} ${user?.apellido}`.trim();
+            }
+
+            setNombre(userDisplayName || "");
+            setEmail(user?.email || localProfile.email || localStorage.getItem("user_email") || "");
+            setTelefono(user?.telefono || user?.phone || localProfile.telefono || localStorage.getItem("user_phone") || "");
+            setDni(user?.dni || localProfile.dni || localStorage.getItem("user_dni") || "");
+            setFotoPerfil(user?.fotoPerfil || user?.fotoUrl || localProfile.fotoPerfil || localStorage.getItem("user_foto_perfil") || "");
+            setDireccion(user?.direccion || user?.address || localProfile.direccion || localStorage.getItem("user_address") || "");
+            setProvincia(user?.provincia || user?.province || localProfile.provincia || localStorage.getItem("user_province") || "");
+            setCiudad(user?.ciudad || user?.city || localProfile.ciudad || localStorage.getItem("user_city") || "");
+            setCp(user?.cp || user?.codigoPostal || localProfile.cp || localStorage.getItem("user_cp") || "");
+            setBioPersonal(user?.descripcion || localProfile.bioPersonal || localStorage.getItem("user_bio_personal") || "");
+            setDisponibilidadContacto(localProfile.disponibilidadContacto || localStorage.getItem("user_disp_contacto") || "Horario comercial (8:00 a 20:00)");
         } finally {
             setLoading(false);
         }

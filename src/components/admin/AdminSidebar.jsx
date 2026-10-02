@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { LayoutDashboard, Shield, Users, LogOut, X } from "lucide-react";
+import { LayoutDashboard, Shield, Users, AlertTriangle, LogOut, X } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import logoCareConnect from "../../assets/logo_careconnect.png";
 import { P } from "../shared";
@@ -35,6 +35,7 @@ export default function AdminSidebar({
         { id: "inicio_admin", icon: LayoutDashboard, label: "Métricas" },
         { id: "moderacion", icon: Shield, label: "Verificaciones" },
         { id: "gestion_usuarios", icon: Users, label: "Usuarios" },
+        { id: "reportes", icon: AlertTriangle, label: "Reportes" },
     ];
 
     const handleLogout = () => {

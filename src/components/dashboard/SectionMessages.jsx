@@ -1,179 +1,383 @@
 import { useState, useEffect, useRef } from "react";
-import { Search, MessageSquare, Phone, Send } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
+import { Search, MessageSquare, Send, Loader2, CheckCheck, Clock, Plus, MessageSquarePlus, ChevronLeft } from "lucide-react";
 import { P } from "../../shared";
+import { useAuth } from "../../context/AuthContext";
+import { getConversations, getMessages, sendMessage, startOrGetConversation } from "../../services/chatService";
+import { UserAvatar } from "../ui/UserAvatar";
+import { NewChatModal } from "./NewChatModal";
 
-export function SectionMessages({ initialChats = [] }) {
-    const [chats, setChats] = useState(initialChats);
-    const [selectedChatId, setSelectedChatId] = useState(initialChats[0]?.id || null);
+export function SectionMessages() {
+    const [searchParams] = useSearchParams();
+    const targetCaregiverId = searchParams.get("with");
+    const targetCaregiverName = searchParams.get("name");
+    const targetCaregiverFoto = searchParams.get("foto");
+
+    const { user } = useAuth();
+    const userId = user?.id || localStorage.getItem("user_id") || "current";
+    const userRole = user?.rol || user?.role || localStorage.getItem("user_role") || "FAMILIAR";
+
+    const [chats, setChats] = useState([]);
+    const [selectedChatId, setSelectedChatId] = useState(null);
     const [messagesByChat, setMessagesByChat] = useState({});
     const [searchQuery, setSearchQuery] = useState("");
     const [text, setText] = useState("");
+    const [loading, setLoading] = useState(true);
+    const [sending, setSending] = useState(false);
+    const [isNewChatModalOpen, setIsNewChatModalOpen] = useState(false);
     const chatRef = useRef(null);
+
+    // 1. Cargar lista de conversaciones
+    const loadChats = async () => {
+        try {
+            const list = await getConversations(userId);
+            setChats(list);
+
+            // Si se especificó un usuario objetivo en la URL, seleccionarlo o crearlo
+            if (targetCaregiverId) {
+                const existing = list.find(c => Number(c.otherUserId) === Number(targetCaregiverId));
+                if (existing) {
+                    setSelectedChatId(existing.id);
+                } else {
+                    const newChat = await startOrGetConversation({
+                        otherUserId: Number(targetCaregiverId),
+                        otherUserName: targetCaregiverName || "Profesional de Cuidado",
+                        otherUserFoto: targetCaregiverFoto || null,
+                        userId
+                    });
+                    setChats(prev => [newChat, ...prev.filter(c => c.id !== newChat.id)]);
+                    setSelectedChatId(newChat.id);
+                }
+            } else if (!selectedChatId && list.length > 0 && window.innerWidth >= 768) {
+                // En desktop auto-seleccionar el primer chat; en móvil mantener la lista
+                setSelectedChatId(list[0].id);
+            }
+        } catch (err) {
+            console.error("Error al cargar chats:", err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        loadChats();
+    }, [userId, targetCaregiverId]);
+
+    // 2. Cargar mensajes del chat activo y Polling cada 4 segundos
+    const loadCurrentMessages = async (chatId) => {
+        if (!chatId) return;
+        try {
+            const msgs = await getMessages(chatId, userId);
+            setMessagesByChat(prev => ({
+                ...prev,
+                [chatId]: msgs
+            }));
+        } catch (err) {
+            console.error("Error al cargar mensajes:", err);
+        }
+    };
+
+    useEffect(() => {
+        if (!selectedChatId) return;
+        loadCurrentMessages(selectedChatId);
+
+        // Polling para simular recepción en tiempo real
+        const interval = setInterval(() => {
+            loadCurrentMessages(selectedChatId);
+        }, 4000);
+
+        return () => clearInterval(interval);
+    }, [selectedChatId, userId]);
 
     const activeChat = chats.find(c => c.id === selectedChatId);
     const currentMessages = selectedChatId ? (messagesByChat[selectedChatId] || []) : [];
 
-    const handleSend = () => {
-        if (!text.trim() || !selectedChatId) return;
+    // 3. Enviar mensaje
+    const handleSend = async () => {
+        if (!text.trim() || !selectedChatId || sending) return;
 
-        const newMessage = {
-            id: Date.now(),
-            sender: "user",
-            text: text.trim(),
-            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        };
-
-        setMessagesByChat(prev => ({
-            ...prev,
-            [selectedChatId]: [...(prev[selectedChatId] || []), newMessage]
-        }));
-
-        // Actualizar último mensaje en la lista de chats
-        setChats(prev => prev.map(c => c.id === selectedChatId ? {
-            ...c,
-            lastMessage: text.trim(),
-            time: newMessage.time
-        } : c));
-
+        const messageText = text.trim();
         setText("");
+        setSending(true);
+
+        try {
+            const newMsg = await sendMessage({
+                conversationId: selectedChatId,
+                recipientId: activeChat?.otherUserId,
+                text: messageText,
+                userId
+            });
+
+            setMessagesByChat(prev => ({
+                ...prev,
+                [selectedChatId]: [...(prev[selectedChatId] || []), newMsg]
+            }));
+
+            // Actualizar vista previa en lista de chats
+            setChats(prev => prev.map(c => c.id === selectedChatId ? {
+                ...c,
+                lastMessage: messageText,
+                time: newMsg.time
+            } : c));
+        } catch (err) {
+            console.error("Error al enviar mensaje:", err);
+        } finally {
+            setSending(false);
+        }
     };
 
+    // 4. Seleccionar un contacto desde el modal de Nueva Conversación
+    const handleSelectContactFromModal = async (contact) => {
+        try {
+            const newChat = await startOrGetConversation({
+                otherUserId: Number(contact.id),
+                otherUserName: contact.name,
+                otherUserFoto: contact.foto || null,
+                otherUserRole: contact.role || "Contacto",
+                userId
+            });
+            setChats(prev => [newChat, ...prev.filter(c => c.id !== newChat.id)]);
+            setSelectedChatId(newChat.id);
+        } catch (err) {
+            console.error("Error al iniciar chat con contacto:", err);
+        }
+    };
+
+    // Auto-scroll hacia abajo
     useEffect(() => {
         if (chatRef.current) {
             chatRef.current.scrollTop = chatRef.current.scrollHeight;
         }
-    }, [messagesByChat, selectedChatId]);
+    }, [currentMessages, selectedChatId]);
 
     const filteredChats = chats.filter(c => 
         c.name?.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
     return (
-        <div className="flex-1 flex overflow-hidden">
-            {/* Sidebar de Chats */}
-            <div className="w-80 border-r flex flex-col" style={{ borderColor: P.baseNeutral, backgroundColor: "white" }}>
-                <div className="p-4 border-b flex items-center gap-2" style={{ borderColor: P.baseNeutral }}>
-                    <Search className="w-4 h-4" style={{ color: P.neutralDark }} />
-                    <input 
-                        value={searchQuery}
-                        onChange={e => setSearchQuery(e.target.value)}
-                        placeholder="Buscar chat..." 
-                        className="text-sm outline-none w-full bg-transparent" 
-                    />
+        <div className="flex-1 flex overflow-hidden bg-slate-50 relative">
+            {/* Sidebar de Lista de Chats (En móvil se oculta cuando hay un chat activo) */}
+            <div 
+                className={`w-full md:w-80 border-r flex flex-col bg-white flex-shrink-0 transition-all ${
+                    selectedChatId ? "hidden md:flex" : "flex"
+                }`} 
+                style={{ borderColor: P.baseNeutral }}
+            >
+                {/* Cabecera con Botón de Nueva Conversación */}
+                <div className="p-3.5 border-b flex flex-col gap-2.5" style={{ borderColor: P.baseNeutral }}>
+                    <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                            Mensajes
+                        </span>
+                        <button
+                            type="button"
+                            onClick={() => setIsNewChatModalOpen(true)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-bold text-teal-700 bg-teal-50 hover:bg-teal-100 transition-colors shadow-2xs cursor-pointer"
+                            title="Iniciar conversación con profesional o familiar contratado"
+                        >
+                            <Plus className="w-3.5 h-3.5" />
+                            <span>Nuevo Chat</span>
+                        </button>
+                    </div>
+
+                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                        <Search className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+                        <input 
+                            value={searchQuery}
+                            onChange={e => setSearchQuery(e.target.value)}
+                            placeholder="Buscar conversación..." 
+                            className="text-xs outline-none w-full bg-transparent text-slate-800" 
+                        />
+                    </div>
                 </div>
-                <div className="flex-1 overflow-y-auto">
-                    {filteredChats.length === 0 ? (
+
+                {/* Lista de Conversaciones */}
+                <div className="flex-1 overflow-y-auto divide-y divide-slate-100">
+                    {loading ? (
+                        <div className="flex flex-col items-center justify-center h-48 text-slate-400 gap-2">
+                            <Loader2 className="w-6 h-6 animate-spin text-teal-600" />
+                            <p className="text-xs font-semibold">Cargando conversaciones...</p>
+                        </div>
+                    ) : filteredChats.length === 0 ? (
                         <div className="flex flex-col items-center justify-center h-full text-center p-6">
-                            <div className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center mb-3 text-slate-300">
+                            <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center mb-3 text-slate-400">
                                 <MessageSquare className="w-6 h-6" />
                             </div>
                             <p className="text-xs font-bold text-slate-700">Sin conversaciones</p>
-                            <p className="text-[11px] text-slate-400 mt-1 max-w-[180px]">
-                                {searchQuery ? "No se encontraron resultados" : "Tus mensajes activos aparecerán aquí."}
+                            <p className="text-[11px] text-slate-400 mt-1 max-w-[200px] mb-4">
+                                {searchQuery ? "No se encontraron resultados" : "Tus mensajes con cuidadores o familiares contratados aparecerán aquí."}
                             </p>
+                            <button
+                                type="button"
+                                onClick={() => setIsNewChatModalOpen(true)}
+                                className="px-3.5 py-2 rounded-xl text-xs font-bold text-white shadow-sm hover:opacity-95 transition-opacity"
+                                style={{ backgroundColor: P.primary }}
+                            >
+                                Iniciar Conversación
+                            </button>
                         </div>
                     ) : (
-                        filteredChats.map(c => (
-                            <div 
-                                key={c.id} 
-                                onClick={() => setSelectedChatId(c.id)} 
-                                className="flex items-center gap-3 p-4 cursor-pointer hover:bg-neutral-50 transition-colors" 
-                                style={{ backgroundColor: selectedChatId === c.id ? "#e8f4f8" : "transparent" }}
-                            >
-                                <img src={c.image} className="w-10 h-10 rounded-full object-cover" alt="" />
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex justify-between items-baseline">
-                                        <p className="text-sm font-semibold truncate" style={{ color: P.dark }}>{c.name}</p>
-                                        <span className="text-[10px]" style={{ color: P.neutralDark }}>{c.time}</span>
+                        filteredChats.map(c => {
+                            const isSelected = selectedChatId === c.id;
+                            return (
+                                <div 
+                                    key={c.id} 
+                                    onClick={() => setSelectedChatId(c.id)} 
+                                    className={`flex items-center gap-3 p-4 cursor-pointer transition-colors ${
+                                        isSelected ? "bg-teal-50/80 border-l-4 border-teal-600" : "hover:bg-slate-50"
+                                    }`}
+                                >
+                                    <div className="relative flex-shrink-0">
+                                        <UserAvatar
+                                            src={c.fotoPerfil || c.image}
+                                            name={c.name}
+                                            size="sm"
+                                            shape="rounded-full"
+                                        />
                                     </div>
-                                    <p className="text-xs truncate" style={{ color: P.neutralDark }}>{c.lastMessage || "Sin mensajes"}</p>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex justify-between items-baseline mb-0.5">
+                                            <p className="text-sm font-bold truncate text-slate-800">{c.name}</p>
+                                            <span className="text-[10px] text-slate-400 flex-shrink-0 ml-1">{c.time}</span>
+                                        </div>
+                                        <p className="text-xs truncate text-slate-500">{c.lastMessage || "Conversación iniciada"}</p>
+                                    </div>
                                 </div>
-                            </div>
-                        ))
+                            );
+                        })
                     )}
                 </div>
             </div>
 
-            {/* Área Principal de Chat / Estado Vacío */}
+            {/* Área Principal de Mensajes */}
             {!activeChat ? (
-                <div className="flex-1 flex flex-col items-center justify-center text-center p-8 bg-slate-50/50">
+                <div className={`flex-1 flex-col items-center justify-center text-center p-8 bg-slate-50/50 ${selectedChatId ? "flex" : "hidden md:flex"}`}>
                     <div className="max-w-md w-full bg-white p-8 rounded-3xl border shadow-sm flex flex-col items-center" style={{ borderColor: P.baseNeutral }}>
-                        <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4" style={{ backgroundColor: "rgba(37,150,190,0.1)", color: P.primary }}>
+                        <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4 bg-teal-50 text-teal-700">
                             <MessageSquare className="w-8 h-8" />
                         </div>
-                        <h3 className="text-lg font-bold" style={{ color: P.dark }}>No hay mensajes disponibles</h3>
-                        <p className="text-xs mt-2 leading-relaxed max-w-sm" style={{ color: P.neutralDark }}>
-                            Aún no tienes conversaciones activas. Cuando te comuniques con un cuidador o profesional desde el directorio, podrás coordinar el servicio y chatear directamente desde aquí.
+                        <h3 className="text-lg font-bold text-slate-800">Selecciona una conversación</h3>
+                        <p className="text-xs mt-2 leading-relaxed text-slate-500 max-w-sm mb-5">
+                            Elige un chat de la lista lateral o inicia una nueva conversación con tus contactos contratados para coordinar la atención.
                         </p>
+                        <button
+                            type="button"
+                            onClick={() => setIsNewChatModalOpen(true)}
+                            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-white shadow-sm hover:opacity-95 transition-all cursor-pointer"
+                            style={{ backgroundColor: P.primary }}
+                        >
+                            <MessageSquarePlus className="w-4 h-4" />
+                            <span>Nueva Conversación</span>
+                        </button>
                     </div>
                 </div>
             ) : (
-                <div className="flex-1 flex flex-col overflow-hidden" style={{ backgroundColor: "#f8fbfd" }}>
-                    {/* Header del Chat */}
-                    <div className="px-6 py-4 border-b flex items-center justify-between" style={{ borderColor: P.baseNeutral, backgroundColor: "white" }}>
-                        <div className="flex items-center gap-3">
-                            <img src={activeChat.image} className="w-10 h-10 rounded-full object-cover" alt="" />
-                            <div>
-                                <p className="text-sm font-bold" style={{ color: P.dark }}>{activeChat.name}</p>
-                                <p className="text-xs text-emerald-600 font-semibold">En línea</p>
+                <div className={`flex-1 flex-col overflow-hidden bg-slate-50/40 ${selectedChatId ? "flex" : "hidden md:flex"}`}>
+                    {/* Header del Chat Activo */}
+                    <div className="px-4 sm:px-6 py-3 border-b flex items-center justify-between bg-white shadow-2xs" style={{ borderColor: P.baseNeutral }}>
+                        <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+                            {/* Botón Volver en móvil */}
+                            <button
+                                type="button"
+                                onClick={() => setSelectedChatId(null)}
+                                className="p-1.5 -ml-1.5 rounded-xl text-slate-600 hover:bg-slate-100 md:hidden flex items-center justify-center cursor-pointer flex-shrink-0"
+                                title="Volver a la lista de conversaciones"
+                            >
+                                <ChevronLeft className="w-5 h-5" />
+                            </button>
+
+                            <UserAvatar
+                                src={activeChat.fotoPerfil || activeChat.image}
+                                name={activeChat.name}
+                                size="sm"
+                                shape="rounded-full"
+                            />
+                            <div className="min-w-0">
+                                <p className="text-sm font-bold text-slate-900 truncate">{activeChat.name}</p>
+                                {activeChat.role && (
+                                    <p className="text-[11px] text-slate-500 font-medium truncate">
+                                        {activeChat.role}
+                                    </p>
+                                )}
                             </div>
                         </div>
-                        {activeChat.phone && (
-                            <a 
-                                href={`tel:${activeChat.phone}`}
-                                className="p-2 rounded-xl border flex items-center gap-1.5 text-xs font-semibold hover:bg-slate-50 transition-colors" 
-                                style={{ borderColor: P.baseNeutral, color: P.dark }}
-                            >
-                                <Phone className="w-3.5 h-3.5" /> Llamar
-                            </a>
-                        )}
                     </div>
 
-                    {/* Mensajes */}
-                    <div ref={chatRef} className="flex-1 overflow-y-auto p-6 space-y-4">
+                    {/* Contenedor de Mensajes */}
+                    <div ref={chatRef} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3">
                         {currentMessages.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center h-full text-center text-slate-400">
+                            <div className="flex flex-col items-center justify-center h-full text-center text-slate-400 gap-2">
+                                <Clock className="w-8 h-8 text-slate-300" />
                                 <p className="text-xs font-semibold">Inicia la conversación enviando un mensaje a continuación.</p>
                             </div>
                         ) : (
-                            currentMessages.map(m => (
-                                <div key={m.id} className={`flex ${m.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-                                    <div className="max-w-[70%] p-3.5 rounded-2xl text-sm shadow-sm" style={{
-                                        backgroundColor: m.sender === 'user' ? P.primary : 'white',
-                                        color: m.sender === 'user' ? 'white' : P.dark,
-                                        borderRadius: m.sender === 'user' ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
-                                    }}>
-                                        <p>{m.text}</p>
-                                        <span className="text-[9px] block text-right mt-1 opacity-70">{m.time}</span>
+                            currentMessages.map(m => {
+                                const isUser = m.sender === 'user';
+                                return (
+                                    <div key={m.id} className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
+                                        <div 
+                                            className={`max-w-[85%] sm:max-w-[65%] px-4 py-2.5 rounded-2xl text-xs sm:text-sm shadow-xs ${
+                                                isUser 
+                                                    ? 'text-white rounded-tr-xs' 
+                                                    : 'bg-white text-slate-800 border border-slate-200/80 rounded-tl-xs'
+                                            }`}
+                                            style={{
+                                                backgroundColor: isUser ? P.primary : '#ffffff',
+                                            }}
+                                        >
+                                            <p className="leading-relaxed break-words whitespace-pre-wrap">{m.text}</p>
+                                            <div className="flex items-center justify-end gap-1 mt-1 opacity-75 text-[10px]">
+                                                <span>{m.time}</span>
+                                                {isUser && <CheckCheck className="w-3 h-3 inline" />}
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
-                            ))
+                                );
+                            })
                         )}
                     </div>
 
-                    {/* Entrada de texto */}
-                    <div className="p-4 border-t" style={{ borderColor: P.baseNeutral, backgroundColor: "white" }}>
-                        <div className="flex gap-2 items-center">
+                    {/* Input de Envío de Mensaje */}
+                    <div className="p-3 sm:p-4 border-t bg-white shadow-xs" style={{ borderColor: P.baseNeutral }}>
+                        <div className="flex gap-2 items-center max-w-4xl mx-auto">
                             <input 
                                 value={text} 
                                 onChange={e => setText(e.target.value)} 
-                                onKeyDown={e => e.key === 'Enter' && handleSend()} 
-                                placeholder="Escribe un mensaje..." 
-                                className="flex-1 px-4 py-3 rounded-xl border text-sm outline-none bg-slate-50 focus:bg-white transition-colors" 
+                                onKeyDown={e => {
+                                    if (e.key === 'Enter' && !e.shiftKey) {
+                                        e.preventDefault();
+                                        handleSend();
+                                    }
+                                }} 
+                                placeholder="Escribe un mensaje para coordinar la atención..." 
+                                className="flex-1 px-3.5 sm:px-4 py-2.5 sm:py-3 rounded-2xl border text-xs sm:text-sm outline-none bg-slate-50 focus:bg-white focus:border-teal-600 transition-colors" 
                                 style={{ borderColor: P.baseNeutral }} 
                             />
                             <button 
+                                type="button"
                                 onClick={handleSend} 
-                                disabled={!text.trim()}
-                                className="p-3 rounded-xl text-white transition-opacity hover:opacity-90 disabled:opacity-40 cursor-pointer" 
+                                disabled={!text.trim() || sending}
+                                className="p-2.5 sm:p-3 rounded-2xl text-white transition-all hover:opacity-90 active:scale-95 disabled:opacity-40 cursor-pointer shadow-sm flex items-center justify-center flex-shrink-0" 
                                 style={{ backgroundColor: P.primary }}
+                                title="Enviar mensaje"
                             >
-                                <Send className="w-4 h-4" />
+                                {sending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-4 h-4 sm:w-5 sm:h-5" />}
                             </button>
                         </div>
                     </div>
                 </div>
             )}
+
+            {/* Modal para iniciar conversación con contactos contratados */}
+            <NewChatModal
+                isOpen={isNewChatModalOpen}
+                onClose={() => setIsNewChatModalOpen(false)}
+                onSelectContact={handleSelectContactFromModal}
+                userRole={userRole}
+                userId={userId}
+            />
         </div>
     );
 }
+
+export default SectionMessages;

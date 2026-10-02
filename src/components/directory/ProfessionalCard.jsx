@@ -1,4 +1,4 @@
-import { MapPin, Heart } from "lucide-react";
+import { MapPin, Heart, Star } from "lucide-react";
 import { P, formatARS } from "../../shared";
 import { UserAvatar } from "../ui/UserAvatar";
 
@@ -54,9 +54,16 @@ export function ProfessionalCard({ caregiver, onSelect, isFavorite = false, onTo
           </div>
           <div className="text-right flex-shrink-0">
             <div className="flex items-center gap-1 justify-end">
-              <span className="text-xs font-extrabold text-slate-800">{caregiver.rating}</span>
+              <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+              <span className="text-xs font-black text-slate-800">
+                {Number(caregiver.rating || 5.0).toFixed(1)}
+              </span>
             </div>
-            <span className="text-[10px] text-slate-400">({caregiver.reviews} reseñas)</span>
+            <span className="text-[10px] font-medium text-slate-400">
+              {Number(caregiver.reviews || 0) > 0
+                ? `(${caregiver.reviews} ${Number(caregiver.reviews) === 1 ? "reseña" : "reseñas"})`
+                : "(Sin reseñas)"}
+            </span>
           </div>
         </div>
 
