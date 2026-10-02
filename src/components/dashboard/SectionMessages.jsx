@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Search, MessageSquare, Phone, Send, Loader2, CheckCheck, Clock } from "lucide-react";
+import { Search, MessageSquare, Phone, Send, Loader2, CheckCheck, Clock, Plus, MessageSquarePlus } from "lucide-react";
 import { P } from "../../shared";
 import { getMediaUrl } from "../../api/client";
 import { useAuth } from "../../context/AuthContext";
 import { getConversations, getMessages, sendMessage, startOrGetConversation } from "../../services/chatService";
 import { UserAvatar } from "../ui/UserAvatar";
+import { NewChatModal } from "./NewChatModal";
 
 export function SectionMessages() {
     const [searchParams] = useSearchParams();
@@ -15,6 +16,7 @@ export function SectionMessages() {
 
     const { user } = useAuth();
     const userId = user?.id || localStorage.getItem("user_id") || "current";
+    const userRole = user?.rol || user?.role || localStorage.getItem("user_role") || "FAMILIAR";
 
     const [chats, setChats] = useState([]);
     const [selectedChatId, setSelectedChatId] = useState(null);
@@ -23,6 +25,7 @@ export function SectionMessages() {
     const [text, setText] = useState("");
     const [loading, setLoading] = useState(true);
     const [sending, setSending] = useState(false);
+    const [isNewChatModalOpen, setIsNewChatModalOpen] = useState(false);
     const chatRef = useRef(null);
 
     // 1. Cargar lista de conversaciones
@@ -123,6 +126,23 @@ export function SectionMessages() {
         }
     };
 
+    // 4. Seleccionar un contacto desde el modal de Nueva Conversación
+    const handleSelectContactFromModal = async (contact) => {
+        try {
+            const newChat = await startOrGetConversation({
+                otherUserId: Number(contact.id),
+                otherUserName: contact.name,
+                otherUserFoto: contact.foto || null,
+                otherUserRole: contact.role || "Contacto",
+                userId
+            });
+            setChats(prev => [newChat, ...prev.filter(c => c.id !== newChat.id)]);
+            setSelectedChatId(newChat.id);
+        } catch (err) {
+            console.error("Error al iniciar chat con contacto:", err);
+        }
+    };
+
     // Auto-scroll hacia abajo
     useEffect(() => {
         if (chatRef.current) {
@@ -138,16 +158,35 @@ export function SectionMessages() {
         <div className="flex-1 flex overflow-hidden bg-slate-50">
             {/* Sidebar de Chats */}
             <div className="w-80 border-r flex flex-col bg-white flex-shrink-0" style={{ borderColor: P.baseNeutral }}>
-                <div className="p-4 border-b flex items-center gap-2" style={{ borderColor: P.baseNeutral }}>
-                    <Search className="w-4 h-4 text-slate-400" />
-                    <input 
-                        value={searchQuery}
-                        onChange={e => setSearchQuery(e.target.value)}
-                        placeholder="Buscar conversación..." 
-                        className="text-sm outline-none w-full bg-transparent text-slate-800" 
-                    />
+                {/* Cabecera con Botón de Nueva Conversación */}
+                <div className="p-3.5 border-b flex flex-col gap-2.5" style={{ borderColor: P.baseNeutral }}>
+                    <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                            Mensajes
+                        </span>
+                        <button
+                            type="button"
+                            onClick={() => setIsNewChatModalOpen(true)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-bold text-teal-700 bg-teal-50 hover:bg-teal-100 transition-colors shadow-2xs cursor-pointer"
+                            title="Iniciar conversación con profesional o familiar contratado"
+                        >
+                            <Plus className="w-3.5 h-3.5" />
+                            <span>Nuevo Chat</span>
+                        </button>
+                    </div>
+
+                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                        <Search className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+                        <input 
+                            value={searchQuery}
+                            onChange={e => setSearchQuery(e.target.value)}
+                            placeholder="Buscar conversación..." 
+                            className="text-xs outline-none w-full bg-transparent text-slate-800" 
+                        />
+                    </div>
                 </div>
 
+                {/* Lista de Conversaciones */}
                 <div className="flex-1 overflow-y-auto divide-y divide-slate-100">
                     {loading ? (
                         <div className="flex flex-col items-center justify-center h-48 text-slate-400 gap-2">
@@ -160,9 +199,17 @@ export function SectionMessages() {
                                 <MessageSquare className="w-6 h-6" />
                             </div>
                             <p className="text-xs font-bold text-slate-700">Sin conversaciones</p>
-                            <p className="text-[11px] text-slate-400 mt-1 max-w-[180px]">
-                                {searchQuery ? "No se encontraron resultados" : "Tus mensajes activos aparecerán aquí."}
+                            <p className="text-[11px] text-slate-400 mt-1 max-w-[200px] mb-4">
+                                {searchQuery ? "No se encontraron resultados" : "Tus mensajes con cuidadores o familiares contratados aparecerán aquí."}
                             </p>
+                            <button
+                                type="button"
+                                onClick={() => setIsNewChatModalOpen(true)}
+                                className="px-3.5 py-2 rounded-xl text-xs font-bold text-white shadow-sm hover:opacity-95 transition-opacity"
+                                style={{ backgroundColor: P.primary }}
+                            >
+                                Iniciar Conversación
+                            </button>
                         </div>
                     ) : (
                         filteredChats.map(c => {
@@ -205,9 +252,18 @@ export function SectionMessages() {
                             <MessageSquare className="w-8 h-8" />
                         </div>
                         <h3 className="text-lg font-bold text-slate-800">Selecciona una conversación</h3>
-                        <p className="text-xs mt-2 leading-relaxed text-slate-500 max-w-sm">
-                            Elige una conversación de la lista lateral o contacta a un cuidador desde el directorio para coordinar cuidados y resolver consultas.
+                        <p className="text-xs mt-2 leading-relaxed text-slate-500 max-w-sm mb-5">
+                            Elige un chat de la lista lateral o inicia una nueva conversación con tus contactos contratados para coordinar la atención.
                         </p>
+                        <button
+                            type="button"
+                            onClick={() => setIsNewChatModalOpen(true)}
+                            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-white shadow-sm hover:opacity-95 transition-all"
+                            style={{ backgroundColor: P.primary }}
+                        >
+                            <MessageSquarePlus className="w-4 h-4" />
+                            <span>Nueva Conversación</span>
+                        </button>
                     </div>
                 </div>
             ) : (
@@ -264,7 +320,7 @@ export function SectionMessages() {
                                                 backgroundColor: isUser ? P.primary : '#ffffff',
                                             }}
                                         >
-                                            <p className="leading-relaxed break-words">{m.text}</p>
+                                            <p className="leading-relaxed break-words whitespace-pre-wrap">{m.text}</p>
                                             <div className="flex items-center justify-end gap-1 mt-1 opacity-75 text-[10px]">
                                                 <span>{m.time}</span>
                                                 {isUser && <CheckCheck className="w-3 h-3 inline" />}
@@ -306,6 +362,15 @@ export function SectionMessages() {
                     </div>
                 </div>
             )}
+
+            {/* Modal para iniciar conversación con contactos contratados */}
+            <NewChatModal
+                isOpen={isNewChatModalOpen}
+                onClose={() => setIsNewChatModalOpen(false)}
+                onSelectContact={handleSelectContactFromModal}
+                userRole={userRole}
+                userId={userId}
+            />
         </div>
     );
 }

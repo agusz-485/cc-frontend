@@ -8,3 +8,4 @@ export { ProfilePricingWidget } from "./ProfilePricingWidget";
 export { ProfileNotFound } from "./ProfileNotFound";
 export { BookingModal } from "./BookingModal";
 export { BookingAuthPrompt } from "./BookingAuthPrompt";
+export { SolicitudCuidadoModal } from "./SolicitudCuidadoModal";
