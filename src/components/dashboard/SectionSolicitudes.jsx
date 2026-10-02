@@ -1,10 +1,12 @@
 import { useState } from "react";
-import { Clock, CheckCircle, FileText, UserCheck, Heart } from "lucide-react";
+import { Clock, CheckCircle, FileText, UserCheck, Heart, Star, CheckCircle2 } from "lucide-react";
 import { P, formatARS } from "../../shared";
 import { ModalDetallePaciente } from "../cuidador/ModalDetallePaciente";
+import { CalificarServicioModal } from "../reviews/CalificarServicioModal";
 
-export function SectionSolicitudes({ requests = [], setRequests, onAccept, onReject }) {
+export function SectionSolicitudes({ requests = [], setRequests, onAccept, onReject, onStatusChange }) {
     const [selectedRequest, setSelectedRequest] = useState(null);
+    const [reviewRequest, setReviewRequest] = useState(null);
     const [tab, setTab] = useState("pending");
 
     const handleAccept = (reqId) => {
@@ -17,11 +19,23 @@ export function SectionSolicitudes({ requests = [], setRequests, onAccept, onRej
         else setRequests?.(prev => prev.map(r => r.id === reqId ? { ...r, status: "cancelled" } : r));
     };
 
+    const handleFinalize = (reqId) => {
+        if (onStatusChange) onStatusChange(reqId, "completed");
+        else setRequests?.(prev => prev.map(r => r.id === reqId ? { ...r, status: "completed" } : r));
+    };
+
     const pendingRequests = requests.filter(r => r.status === "pending");
     const confirmedRequests = requests.filter(r => r.status === "confirmed" || r.status === "accepted");
+    const completedRequests = requests.filter(r => r.status === "completed" || r.status === "finalizado");
     const allRequests = requests;
 
-    const displayedRequests = tab === "pending" ? pendingRequests : (tab === "confirmed" ? confirmedRequests : allRequests);
+    const displayedRequests = tab === "pending"
+        ? pendingRequests
+        : tab === "confirmed"
+        ? confirmedRequests
+        : tab === "completed"
+        ? completedRequests
+        : allRequests;
 
     return (
         <div className="flex-1 overflow-y-auto p-6" style={{ backgroundColor: "#f8fbfd" }}>
@@ -30,18 +44,19 @@ export function SectionSolicitudes({ requests = [], setRequests, onAccept, onRej
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                     <div>
                         <h1 className="text-2xl font-bold" style={{ color: P.dark, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-                            Solicitudes de Servicio
+                            Solicitudes de Servicio y Turnos
                         </h1>
                         <p className="text-xs text-slate-500 mt-0.5">
-                            Revisa la información médica y requerimientos de cada paciente antes y después de confirmar el servicio.
+                            Revisa las solicitudes médicas, confirma turnos y califica a las familias al finalizar el cuidado.
                         </p>
                     </div>
 
                     {/* Filter Tabs */}
-                    <div className="flex items-center p-1 bg-slate-100/90 rounded-2xl border text-xs font-semibold" style={{ borderColor: P.baseNeutral }}>
+                    <div className="flex items-center p-1 bg-slate-100/90 rounded-2xl border text-xs font-semibold overflow-x-auto max-w-full" style={{ borderColor: P.baseNeutral }}>
                         <button
+                            type="button"
                             onClick={() => setTab("pending")}
-                            className={`px-3.5 py-1.5 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer ${tab === "pending" ? "bg-white text-slate-800 shadow-sm font-bold" : "text-slate-500 hover:text-slate-800"}`}
+                            className={`px-3 py-1.5 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${tab === "pending" ? "bg-white text-slate-800 shadow-sm font-bold" : "text-slate-500 hover:text-slate-800"}`}
                         >
                             Pendientes
                             {pendingRequests.length > 0 && (
@@ -51,8 +66,9 @@ export function SectionSolicitudes({ requests = [], setRequests, onAccept, onRej
                             )}
                         </button>
                         <button
+                            type="button"
                             onClick={() => setTab("confirmed")}
-                            className={`px-3.5 py-1.5 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer ${tab === "confirmed" ? "bg-white text-slate-800 shadow-sm font-bold" : "text-slate-500 hover:text-slate-800"}`}
+                            className={`px-3 py-1.5 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${tab === "confirmed" ? "bg-white text-slate-800 shadow-sm font-bold" : "text-slate-500 hover:text-slate-800"}`}
                         >
                             Confirmadas
                             {confirmedRequests.length > 0 && (
@@ -62,8 +78,21 @@ export function SectionSolicitudes({ requests = [], setRequests, onAccept, onRej
                             )}
                         </button>
                         <button
+                            type="button"
+                            onClick={() => setTab("completed")}
+                            className={`px-3 py-1.5 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${tab === "completed" ? "bg-white text-slate-800 shadow-sm font-bold" : "text-slate-500 hover:text-slate-800"}`}
+                        >
+                            Finalizadas
+                            {completedRequests.length > 0 && (
+                                <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-sky-100 text-sky-800 font-bold">
+                                    {completedRequests.length}
+                                </span>
+                            )}
+                        </button>
+                        <button
+                            type="button"
                             onClick={() => setTab("all")}
-                            className={`px-3.5 py-1.5 rounded-xl transition-all cursor-pointer ${tab === "all" ? "bg-white text-slate-800 shadow-sm font-bold" : "text-slate-500 hover:text-slate-800"}`}
+                            className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer whitespace-nowrap ${tab === "all" ? "bg-white text-slate-800 shadow-sm font-bold" : "text-slate-500 hover:text-slate-800"}`}
                         >
                             Todas ({allRequests.length})
                         </button>
@@ -75,10 +104,18 @@ export function SectionSolicitudes({ requests = [], setRequests, onAccept, onRej
                     <div className="bg-white rounded-3xl p-10 border border-dashed text-center" style={{ borderColor: P.baseNeutral }}>
                         <Clock className="w-12 h-12 text-slate-300 mx-auto mb-3" />
                         <p className="font-bold text-slate-700">
-                            {tab === "pending" ? "No tienes solicitudes pendientes de confirmación" : (tab === "confirmed" ? "No tienes servicios confirmados en este momento" : "Sin historial de solicitudes")}
+                            {tab === "pending"
+                                ? "No tienes solicitudes pendientes de confirmación"
+                                : tab === "confirmed"
+                                ? "No tienes servicios en curso en este momento"
+                                : tab === "completed"
+                                ? "No tienes turnos finalizados aún"
+                                : "Sin historial de solicitudes"}
                         </p>
                         <p className="text-xs text-slate-500 mt-1">
-                            {tab === "pending" ? "Cuando una familia reserve tus servicios, podrás revisar su ficha clínica aquí." : "Los turnos que aceptes quedarán agendados en esta sección."}
+                            {tab === "pending"
+                                ? "Cuando una familia reserve tus servicios, podrás revisar su ficha clínica aquí."
+                                : "Los turnos confirmados y completados quedarán organizados en esta sección."}
                         </p>
                     </div>
                 ) : (
@@ -86,6 +123,7 @@ export function SectionSolicitudes({ requests = [], setRequests, onAccept, onRej
                         {displayedRequests.map(req => {
                             const isPending = req.status === "pending";
                             const isConfirmed = req.status === "confirmed" || req.status === "accepted";
+                            const isCompleted = req.status === "completed" || req.status === "finalizado";
 
                             return (
                                 <div key={req.id} className="bg-white rounded-3xl p-5 border shadow-sm space-y-4 hover:border-slate-300 transition-colors" style={{ borderColor: P.baseNeutral }}>
@@ -125,7 +163,12 @@ export function SectionSolicitudes({ requests = [], setRequests, onAccept, onRej
                                                     <CheckCircle className="w-3.5 h-3.5" /> Turno Confirmado ✓
                                                 </span>
                                             )}
-                                            {!isPending && !isConfirmed && (
+                                            {isCompleted && (
+                                                <span className="px-3 py-1 rounded-full text-xs font-bold bg-sky-100 text-sky-800 flex items-center gap-1.5">
+                                                    <CheckCircle2 className="w-3.5 h-3.5" /> Turno Finalizado ✓
+                                                </span>
+                                            )}
+                                            {!isPending && !isConfirmed && !isCompleted && (
                                                 <span className="px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600">
                                                     {req.status}
                                                 </span>
@@ -162,7 +205,7 @@ export function SectionSolicitudes({ requests = [], setRequests, onAccept, onRej
                                             Ver Ficha Completa del Paciente
                                         </button>
 
-                                        {isPending ? (
+                                        {isPending && (
                                             <div className="flex items-center gap-2">
                                                 <button
                                                     type="button"
@@ -180,15 +223,29 @@ export function SectionSolicitudes({ requests = [], setRequests, onAccept, onRej
                                                     <UserCheck className="w-4 h-4" /> Aceptar Reserva
                                                 </button>
                                             </div>
-                                        ) : (
+                                        )}
+
+                                        {isConfirmed && (
                                             <div className="flex items-center gap-2">
                                                 <button
                                                     type="button"
-                                                    onClick={() => setSelectedRequest(req)}
-                                                    className="px-4 py-2.5 rounded-xl border text-slate-600 text-xs font-semibold hover:bg-slate-50 cursor-pointer"
-                                                    style={{ borderColor: P.baseNeutral }}
+                                                    onClick={() => handleFinalize(req.id)}
+                                                    className="px-4 py-2.5 rounded-xl border border-emerald-300 bg-emerald-50 text-emerald-800 font-bold text-xs hover:bg-emerald-100 transition-colors cursor-pointer shadow-2xs"
                                                 >
-                                                    Ver Detalles de Contacto
+                                                    Finalizar Turno
+                                                </button>
+                                            </div>
+                                        )}
+
+                                        {isCompleted && (
+                                            <div className="flex items-center gap-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setReviewRequest(req)}
+                                                    className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl font-bold text-xs bg-amber-50 text-amber-900 border border-amber-200 hover:bg-amber-100 hover:border-amber-300 transition-all shadow-2xs cursor-pointer"
+                                                >
+                                                    <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
+                                                    <span>Calificar Familiar</span>
                                                 </button>
                                             </div>
                                         )}
@@ -216,6 +273,14 @@ export function SectionSolicitudes({ requests = [], setRequests, onAccept, onRej
                     }}
                 />
             )}
+
+            {/* Modal para Calificar Familiar */}
+            <CalificarServicioModal
+                isOpen={Boolean(reviewRequest)}
+                onClose={() => setReviewRequest(null)}
+                booking={reviewRequest}
+                targetType="familiar"
+            />
         </div>
     );
 }

@@ -155,7 +155,12 @@ export default function Profile() {
                   <ProfileCertificationsTab caregiver={caregiver} />
                 )}
 
-                {activeTab === "reviews" && <ProfileReviewsTab />}
+                {activeTab === "reviews" && (
+                  <ProfileReviewsTab
+                    caregiverId={caregiver?.id}
+                    reviews={Array.isArray(caregiver?.reviews) ? caregiver.reviews : []}
+                  />
+                )}
               </div>
             </div>
           </div>
