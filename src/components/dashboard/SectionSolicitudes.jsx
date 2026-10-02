@@ -237,18 +237,30 @@ export function SectionSolicitudes({ requests = [], setRequests, onAccept, onRej
                                             </div>
                                         )}
 
-                                        {isCompleted && (
-                                            <div className="flex items-center gap-2">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setReviewRequest(req)}
-                                                    className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl font-bold text-xs bg-amber-50 text-amber-900 border border-amber-200 hover:bg-amber-100 hover:border-amber-300 transition-all shadow-2xs cursor-pointer"
-                                                >
-                                                    <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
-                                                    <span>Calificar Familiar</span>
-                                                </button>
-                                            </div>
-                                        )}
+                                        {isCompleted && (() => {
+                                            const rawId = req.id;
+                                            const isReviewed = Boolean(
+                                                localStorage.getItem(`careconnect_review_turno_${rawId}_${localStorage.getItem("user_id")}`) ||
+                                                localStorage.getItem(`careconnect_review_turno_${String(rawId).replace("RES-", "")}_${localStorage.getItem("user_id")}`)
+                                            );
+
+                                            return (
+                                                <div className="flex items-center gap-2">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setReviewRequest(req)}
+                                                        className={`inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl font-bold text-xs transition-all shadow-2xs cursor-pointer ${
+                                                            isReviewed
+                                                                ? "bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100"
+                                                                : "bg-amber-50 text-amber-900 border border-amber-200 hover:bg-amber-100 hover:border-amber-300"
+                                                        }`}
+                                                    >
+                                                        <Star className={`w-4 h-4 ${isReviewed ? "text-emerald-600 fill-emerald-600" : "text-amber-500 fill-amber-500"}`} />
+                                                        <span>{isReviewed ? "Calificación Enviada ✓" : "Calificar Familiar"}</span>
+                                                    </button>
+                                                </div>
+                                            );
+                                        })()}
                                     </div>
                                 </div>
                             );

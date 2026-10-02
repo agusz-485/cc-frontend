@@ -188,17 +188,29 @@ export function SectionBookings({ navigate, bookings = [], onStatusChange }) {
                               Finalizar Turno
                             </button>
                           )}
-                          {b.status === "completed" && (
-                            <button
-                              type="button"
-                              onClick={() => setReviewBooking(b)}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-bold text-xs bg-amber-50 text-amber-900 border border-amber-200 hover:bg-amber-100 hover:border-amber-300 transition-all shadow-2xs cursor-pointer"
-                              title="Calificar servicio y dejar una reseña"
-                            >
-                              <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
-                              <span>Dejar Reseña</span>
-                            </button>
-                          )}
+                          {b.status === "completed" && (() => {
+                            const rawId = b.rawId || b.id;
+                            const isReviewed = Boolean(
+                              localStorage.getItem(`careconnect_review_turno_${rawId}_${localStorage.getItem("user_id")}`) ||
+                              localStorage.getItem(`careconnect_review_turno_${String(rawId).replace("RES-", "")}_${localStorage.getItem("user_id")}`)
+                            );
+
+                            return (
+                              <button
+                                type="button"
+                                onClick={() => setReviewBooking(b)}
+                                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-bold text-xs transition-all shadow-2xs cursor-pointer ${
+                                  isReviewed
+                                    ? "bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100"
+                                    : "bg-amber-50 text-amber-900 border border-amber-200 hover:bg-amber-100 hover:border-amber-300"
+                                }`}
+                                title={isReviewed ? "Ver o modificar tu reseña enviada" : "Calificar servicio y dejar una reseña"}
+                              >
+                                <Star className={`w-3.5 h-3.5 ${isReviewed ? "text-emerald-600 fill-emerald-600" : "text-amber-500 fill-amber-500"}`} />
+                                <span>{isReviewed ? "Reseña Enviada ✓" : "Dejar Reseña"}</span>
+                              </button>
+                            );
+                          })()}
                           {b.status === "cancelled" && (
                             <span className="text-xs text-rose-400 font-medium">Cancelada</span>
                           )}
@@ -219,6 +231,10 @@ export function SectionBookings({ navigate, bookings = [], onStatusChange }) {
         onClose={() => setReviewBooking(null)}
         booking={reviewBooking}
         targetType="cuidador"
+        onReviewSubmitted={() => {
+          // Trigger re-render to update review state
+          setReviewBooking(null);
+        }}
       />
     </div>
   );

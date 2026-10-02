@@ -21,6 +21,7 @@ export function CalificarServicioModal({ isOpen, onClose, booking, targetType = 
   const [hoverRating, setHoverRating] = useState(0);
   const [comentario, setComentario] = useState("");
   const [loadingInitial, setLoadingInitial] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
@@ -47,9 +48,11 @@ export function CalificarServicioModal({ isOpen, onClose, booking, targetType = 
       try {
         const existing = await getMyReviewForTurno(turnoId, userId);
         if (isMounted && existing) {
+          setIsEditing(true);
           setRating(existing.puntuacion || 5);
           setComentario(existing.comentario || "");
         } else {
+          setIsEditing(false);
           setRating(5);
           setComentario("");
         }
@@ -157,6 +160,13 @@ export function CalificarServicioModal({ isOpen, onClose, booking, targetType = 
               </div>
             </div>
 
+            {isEditing && (
+              <div className="p-3 rounded-xl bg-sky-50 border border-sky-200 text-sky-800 text-xs flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-sky-600 flex-shrink-0" />
+                <span>Ya has evaluado este servicio. Puedes modificar tu puntuación o comentarios a continuación.</span>
+              </div>
+            )}
+
             {error && (
               <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 flex-shrink-0" />
@@ -242,7 +252,7 @@ export function CalificarServicioModal({ isOpen, onClose, booking, targetType = 
                 ) : (
                   <>
                     <Star className="w-4 h-4 fill-white" />
-                    <span>Publicar Calificación</span>
+                    <span>{isEditing ? "Actualizar Reseña" : "Publicar Calificación"}</span>
                   </>
                 )}
               </button>

@@ -45,12 +45,15 @@ export const searchProfessionals = async () => {
         const nombreCompleto = `${c.nombre || ""} ${c.apellido || ""}`.trim() || "Cuidador Profesional";
         const rate = Number(c.precioHora) || Number(c.tarifaHora) || 3000;
         const { bio: cleanBio } = decodeScheduleFromDescription(c.descripcion);
+        const totalReviews = Number(c.totalResenas !== undefined ? c.totalResenas : (c.totalResenias !== undefined ? c.totalResenias : (c.reviews || 0)));
+        const avgRating = Number(c.calificacionPromedio !== undefined ? c.calificacionPromedio : (c.rating || 5.0));
+
         return {
           ...c,
           id,
           name: nombreCompleto,
-          rating: c.calificacionPromedio || 5.0,
-          reviews: c.totalResenas || 0,
+          rating: avgRating,
+          reviews: totalReviews,
           hourlyRate: rate,
           dailyRate: rate * 8,
           location: c.zonaPrincipal || "Argentina",
@@ -73,12 +76,15 @@ export const searchProfessionals = async () => {
         const nombreCompleto = `${n.nombre || ""} ${n.apellido || ""}`.trim() || "Enfermero Matriculado";
         const rate = Number(n.precioHora) || Number(n.tarifaHora) || 4500;
         const { bio: cleanBio } = decodeScheduleFromDescription(n.descripcion);
+        const totalReviews = Number(n.totalResenas !== undefined ? n.totalResenas : (n.totalResenias !== undefined ? n.totalResenias : (n.reviews || 0)));
+        const avgRating = Number(n.calificacionPromedio !== undefined ? n.calificacionPromedio : (n.rating || 5.0));
+
         return {
           ...n,
           id,
           name: nombreCompleto,
-          rating: n.calificacionPromedio || 5.0,
-          reviews: n.totalResenas || 0,
+          rating: avgRating,
+          reviews: totalReviews,
           hourlyRate: rate,
           dailyRate: rate * 8,
           location: n.zonaPrincipal || "Argentina",
@@ -149,11 +155,14 @@ export const getProfessionalById = async (id) => {
       const mergedCerts = (c.certificaciones && c.certificaciones.length > 0) ? c.certificaciones : (localProfile.certs || []);
       const mergedZones = (c.zonasCobertura && c.zonasCobertura.length > 0) ? c.zonasCobertura : (localProfile.coverageZones || [c.zonaPrincipal || "Argentina"]);
 
+      const totalReviews = Number(c.totalResenas !== undefined ? c.totalResenas : (c.totalResenias !== undefined ? c.totalResenias : (c.reviews || 0)));
+      const avgRating = Number(c.calificacionPromedio !== undefined ? c.calificacionPromedio : (c.rating || 5.0));
+
       return {
         id: c.id || targetId,
         name: `${c.nombre || ""} ${c.apellido || ""}`.trim() || "Cuidador Profesional",
-        rating: c.calificacionPromedio || 5.0,
-        reviews: c.totalResenas || 0,
+        rating: avgRating,
+        reviews: totalReviews,
         hourlyRate: rate,
         dailyRate: rate * 8,
         location: c.zonaPrincipal || "Argentina",
@@ -178,12 +187,14 @@ export const getProfessionalById = async (id) => {
         const activeSched = mergeSchedule(backendSched || localSchedule);
         const mergedCerts = (n.certificaciones && n.certificaciones.length > 0) ? n.certificaciones : (localProfile.certs || []);
         const mergedZones = (n.zonasCobertura && n.zonasCobertura.length > 0) ? n.zonasCobertura : (localProfile.coverageZones || [n.zonaPrincipal || "Argentina"]);
+        const totalReviewsN = Number(n.totalResenas !== undefined ? n.totalResenas : (n.totalResenias !== undefined ? n.totalResenias : (n.reviews || 0)));
+        const avgRatingN = Number(n.calificacionPromedio !== undefined ? n.calificacionPromedio : (n.rating || 5.0));
 
         return {
           id: n.id || targetId,
           name: `${n.nombre || ""} ${n.apellido || ""}`.trim() || "Enfermero Matriculado",
-          rating: n.calificacionPromedio || 5.0,
-          reviews: n.totalResenas || 0,
+          rating: avgRatingN,
+          reviews: totalReviewsN,
           hourlyRate: rate,
           dailyRate: rate * 8,
           location: n.zonaPrincipal || "Argentina",
