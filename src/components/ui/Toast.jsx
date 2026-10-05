@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+﻿import { useEffect, useRef } from "react";
 import { CircleCheck, AlertCircle, X } from "lucide-react";
 
 const variants = {
@@ -20,7 +20,7 @@ const variants = {
     },
 };
 
-export default function Toast({
+export function Toast({
     title,
     message,
     onClose,
@@ -163,3 +163,5 @@ export default function Toast({
         </>
     );
 }
+
+export default Toast;

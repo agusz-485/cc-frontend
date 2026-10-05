@@ -1,7 +1,7 @@
-import { CircleAlert } from "lucide-react";
+﻿import { CircleAlert } from "lucide-react";
 import FormField, { getControlStyles } from "./FormField";
 
-export default function FormInput({
+export function FormInput({
     id,
     name,
     label,
@@ -57,3 +57,5 @@ export default function FormInput({
         </FormField>
     );
 }
+
+export default FormInput;

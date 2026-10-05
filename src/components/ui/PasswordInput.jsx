@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 
 import FormField, { getControlStyles } from "./FormField";
@@ -19,7 +19,7 @@ function getPasswordError(error, showRequirements) {
     return error;
 }
 
-export default function PasswordInput({
+export function PasswordInput({
     id,
     name,
     label,
@@ -142,3 +142,5 @@ export default function PasswordInput({
         </FormField>
     );
 }
+
+export default PasswordInput;
