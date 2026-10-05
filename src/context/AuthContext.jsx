@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+﻿import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { authService } from '../services/authService';
 import { getMediaUrl } from '../api/client';
 
@@ -8,6 +8,33 @@ export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [token, setToken] = useState(localStorage.getItem('token') || null);
     const [loading, setLoading] = useState(true);
+
+    const logout = useCallback(() => {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user_id');
+        localStorage.removeItem('user_role');
+        localStorage.removeItem('user_email');
+        localStorage.removeItem('user_name');
+        localStorage.removeItem('user_apellido');
+        localStorage.removeItem('user_foto');
+        localStorage.removeItem('user_foto_perfil');
+        localStorage.removeItem('user_session');
+        setToken(null);
+        setUser(null);
+    }, []);
+
+    // Escuchar expiración automática de sesión desde el interceptor de peticiones
+    useEffect(() => {
+        const handleSessionExpired = () => {
+            console.warn('⚠️ Evento de expiración de sesión recibido en AuthContext. Reseteando estado...');
+            logout();
+        };
+
+        window.addEventListener('careconnect:session_expired', handleSessionExpired);
+        return () => {
+            window.removeEventListener('careconnect:session_expired', handleSessionExpired);
+        };
+    }, [logout]);
 
     // Al recargar la página, si hay token, intentamos recuperar el perfil
     useEffect(() => {
@@ -42,7 +69,7 @@ export const AuthProvider = ({ children }) => {
                     }
                     setUser(fullUserData);
                 } catch (error) {
-                    console.error('Error al recuperar sesión:', error);
+                    console.warn('Sesión caducada o inválida en el servidor:', error?.message);
                     logout();
                 }
             }
@@ -50,7 +77,7 @@ export const AuthProvider = ({ children }) => {
         };
 
         initAuth();
-    }, []);
+    }, [logout]);
 
     const login = async (credentials) => {
         const data = await authService.login(credentials);
@@ -105,20 +132,6 @@ export const AuthProvider = ({ children }) => {
             localStorage.setItem('user_session', JSON.stringify(updated));
             return updated;
         });
-    };
-
-    const logout = () => {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user_id');
-        localStorage.removeItem('user_role');
-        localStorage.removeItem('user_email');
-        localStorage.removeItem('user_name');
-        localStorage.removeItem('user_apellido');
-        localStorage.removeItem('user_foto');
-        localStorage.removeItem('user_foto_perfil');
-        localStorage.removeItem('user_session');
-        setToken(null);
-        setUser(null);
     };
 
     return (
