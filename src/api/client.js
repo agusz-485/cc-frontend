@@ -1,4 +1,4 @@
-import axios from 'axios';
+﻿import axios from 'axios';
 
 const BACKEND_PROD_URL = 'https://cc-backend-cfar.onrender.com';
 
@@ -81,11 +81,28 @@ api.interceptors.request.use(
     (error) => Promise.reject(error)
 );
 
-// Interceptor para respuestas
+// Interceptor para respuestas y manejo de expiración de sesión
 api.interceptors.response.use(
     (response) => response,
     (error) => {
-        // No borrar destructivamente el token en requests de fondo secundarios para evitar invalidar la sesión
+        const status = error?.response?.status;
+        const url = error?.config?.url || '';
+
+        // Si el servidor responde 401 en un endpoint protegido que no sea login/registro
+        if (status === 401 && !url.includes('/auth/login') && !url.includes('/auth/registro')) {
+            const currentToken = localStorage.getItem('token');
+            if (currentToken) {
+                console.warn('⚠️ Sesión expirada o token inválido. Limpiando credenciales caducadas...');
+                localStorage.removeItem('token');
+                localStorage.removeItem('user_session');
+                localStorage.removeItem('user_id');
+                localStorage.removeItem('user_role');
+                // Emitir evento para que AuthContext actualice su estado sin recargas forzadas
+                if (typeof window !== 'undefined') {
+                    window.dispatchEvent(new Event('careconnect:session_expired'));
+                }
+            }
+        }
         return Promise.reject(error);
     }
 );
