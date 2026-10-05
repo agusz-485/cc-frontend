@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+﻿import React, { useEffect } from "react";
 import { 
     LayoutDashboard, 
     MessageSquare, 
@@ -86,9 +86,9 @@ export function Sidebar({
     const badge = badges || {};
 
     const getProfileInfo = () => {
-        const name = userName || user?.nombre || localStorage.getItem("user_name");
-        const storedEmail = user?.email || localStorage.getItem("user_email");
-        const foto = userFoto || user?.fotoPerfil || user?.foto || localStorage.getItem("user_foto") || localStorage.getItem("user_foto_perfil");
+        const name = userName || user?.nombre || "Usuario";
+        const storedEmail = user?.email || "";
+        const foto = user?.fotoPerfil || user?.foto || userFoto || "";
         if (role === "cuidador") return { name: name || "Profesional de Cuidado", desc: storedEmail || "Cuidador / Enfermero", foto };
         if (role === "administrador") return { name: name || "Administrador", desc: storedEmail || "Panel de Administración", foto };
         return { name: name || "Usuario", desc: storedEmail || "Cuenta Familiar", foto };
@@ -103,13 +103,6 @@ export function Sidebar({
 
     const handleLogout = () => {
         if (logout) logout();
-        localStorage.removeItem("token");
-        localStorage.removeItem("user_id");
-        localStorage.removeItem("user_role");
-        localStorage.removeItem("user_email");
-        localStorage.removeItem("user_name");
-        localStorage.removeItem("user_foto");
-        localStorage.removeItem("user_foto_perfil");
         if (onClose) onClose();
         navigate("/");
     };
