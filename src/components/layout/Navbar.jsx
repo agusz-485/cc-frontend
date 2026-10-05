@@ -1,6 +1,5 @@
-import React from "react";
+﻿import React from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { User } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import logoCareConnect from "../../assets/logo_careconnect.png";
 import { UserAvatar } from "../ui/UserAvatar";
@@ -13,8 +12,8 @@ export const Navbar = ({ variant }) => {
   const token = localStorage.getItem("token");
   const isUserLoggedIn = isAuthenticated || Boolean(token);
 
-  const displayName = user?.nombre || localStorage.getItem("user_name") || "Mi Cuenta";
-  const userFoto = user?.fotoPerfil || user?.foto || localStorage.getItem("user_foto") || localStorage.getItem("user_foto_perfil");
+  const displayName = user?.nombre || "Mi Cuenta";
+  const userFoto = user?.fotoPerfil || user?.foto || "";
 
   return (
     <nav className="w-full bg-white/95 backdrop-blur-md border-b border-slate-200/80 sticky top-0 z-50 shadow-2xs">

@@ -1,13 +1,14 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import { Loader2, AlertCircle, RefreshCw } from "lucide-react";
 import { P } from "../../shared";
 import { authService } from "../../services/authService";
 import { useAuth } from "../../context/AuthContext";
 import { AddressLocationFields } from "../ui/AddressLocationFields";
 import { CuidadorProfileHeader } from "./CuidadorProfileHeader";
+import api from "../../api/client";
 
 export function CuidadorProfileTab({ onProfileUpdate, role }) {
-    const { user } = useAuth();
+    const { user, updateUser } = useAuth();
     const activeRole = (role || user?.rol || user?.role || "cuidador").toLowerCase();
     const isEnfermero = activeRole.includes("enfermero");
 
@@ -42,24 +43,24 @@ export function CuidadorProfileTab({ onProfileUpdate, role }) {
                 if (stored) localProfile = JSON.parse(stored);
             } catch {}
 
-            let userDisplayName = userData.nombre || userData.name || localProfile.nombre || localStorage.getItem("user_name") || "";
+            let userDisplayName = userData.nombre || userData.name || localProfile.nombre || "";
             if (userData.apellido && !userDisplayName.toLowerCase().includes(userData.apellido.toLowerCase())) {
                 userDisplayName = `${userDisplayName} ${userData.apellido}`.trim();
             }
 
             setNombre(userDisplayName || "");
-            setEmail(userData.email || localProfile.email || localStorage.getItem("user_email") || "");
-            setTelefono(userData.telefono || userData.phone || localProfile.telefono || localStorage.getItem("user_phone") || "");
-            setDni(userData.dni || localProfile.dni || localStorage.getItem("user_dni") || "");
-            setFotoPerfil(userData.fotoPerfil || userData.fotoUrl || localProfile.fotoPerfil || localStorage.getItem("user_foto_perfil") || "");
-            setDireccion(userData.direccion || userData.address || localProfile.direccion || localStorage.getItem("user_address") || "");
-            setProvincia(userData.provincia || userData.province || localProfile.provincia || localStorage.getItem("user_province") || "");
-            setCiudad(userData.ciudad || userData.city || localProfile.ciudad || localStorage.getItem("user_city") || "");
-            setCp(userData.cp || userData.codigoPostal || localProfile.cp || localStorage.getItem("user_cp") || "");
-            setBioPersonal(userData.descripcion || localProfile.bioPersonal || localStorage.getItem("user_bio_personal") || "");
-            setDisponibilidadContacto(localProfile.disponibilidadContacto || localStorage.getItem("user_disp_contacto") || "Horario comercial (8:00 a 20:00)");
+            setEmail(userData.email || localProfile.email || "");
+            setTelefono(userData.telefono || userData.phone || localProfile.telefono || "");
+            setDni(userData.dni || localProfile.dni || "");
+            setFotoPerfil(userData.fotoPerfil || userData.fotoUrl || localProfile.fotoPerfil || "");
+            setDireccion(userData.direccion || userData.address || localProfile.direccion || "");
+            setProvincia(userData.provincia || userData.province || localProfile.provincia || "");
+            setCiudad(userData.ciudad || userData.city || localProfile.ciudad || "");
+            setCp(userData.cp || userData.codigoPostal || localProfile.cp || "");
+            setBioPersonal(userData.descripcion || localProfile.bioPersonal || "");
+            setDisponibilidadContacto(localProfile.disponibilidadContacto || "Horario comercial (8:00 a 20:00)");
         } catch (err) {
-            console.warn("No se pudo cargar el perfil desde el servidor, cargando datos locales:", err);
+            console.warn("No se pudo cargar el perfil desde el servidor, cargando datos de usuario:", err);
             const userId = user?.id || localStorage.getItem("user_id") || "current";
             let localProfile = {};
             try {
@@ -67,22 +68,22 @@ export function CuidadorProfileTab({ onProfileUpdate, role }) {
                 if (stored) localProfile = JSON.parse(stored);
             } catch {}
 
-            let userDisplayName = user?.nombre || user?.name || localProfile.nombre || localStorage.getItem("user_name") || "";
+            let userDisplayName = user?.nombre || user?.name || localProfile.nombre || "";
             if (user?.apellido && !userDisplayName.toLowerCase().includes(user?.apellido?.toLowerCase())) {
                 userDisplayName = `${userDisplayName} ${user?.apellido}`.trim();
             }
 
             setNombre(userDisplayName || "");
-            setEmail(user?.email || localProfile.email || localStorage.getItem("user_email") || "");
-            setTelefono(user?.telefono || user?.phone || localProfile.telefono || localStorage.getItem("user_phone") || "");
-            setDni(user?.dni || localProfile.dni || localStorage.getItem("user_dni") || "");
-            setFotoPerfil(user?.fotoPerfil || user?.fotoUrl || localProfile.fotoPerfil || localStorage.getItem("user_foto_perfil") || "");
-            setDireccion(user?.direccion || user?.address || localProfile.direccion || localStorage.getItem("user_address") || "");
-            setProvincia(user?.provincia || user?.province || localProfile.provincia || localStorage.getItem("user_province") || "");
-            setCiudad(user?.ciudad || user?.city || localProfile.ciudad || localStorage.getItem("user_city") || "");
-            setCp(user?.cp || user?.codigoPostal || localProfile.cp || localStorage.getItem("user_cp") || "");
-            setBioPersonal(user?.descripcion || localProfile.bioPersonal || localStorage.getItem("user_bio_personal") || "");
-            setDisponibilidadContacto(localProfile.disponibilidadContacto || localStorage.getItem("user_disp_contacto") || "Horario comercial (8:00 a 20:00)");
+            setEmail(user?.email || localProfile.email || "");
+            setTelefono(user?.telefono || user?.phone || localProfile.telefono || "");
+            setDni(user?.dni || localProfile.dni || "");
+            setFotoPerfil(user?.fotoPerfil || user?.fotoUrl || localProfile.fotoPerfil || "");
+            setDireccion(user?.direccion || user?.address || localProfile.direccion || "");
+            setProvincia(user?.provincia || user?.province || localProfile.provincia || "");
+            setCiudad(user?.ciudad || user?.city || localProfile.ciudad || "");
+            setCp(user?.cp || user?.codigoPostal || localProfile.cp || "");
+            setBioPersonal(user?.descripcion || localProfile.bioPersonal || "");
+            setDisponibilidadContacto(localProfile.disponibilidadContacto || "Horario comercial (8:00 a 20:00)");
         } finally {
             setLoading(false);
         }
@@ -90,7 +91,7 @@ export function CuidadorProfileTab({ onProfileUpdate, role }) {
 
     useEffect(() => {
         loadProfile();
-    }, []);
+    }, [user?.id]);
 
     const handleSaveProfile = async () => {
         setSaveState("saving");
@@ -98,30 +99,39 @@ export function CuidadorProfileTab({ onProfileUpdate, role }) {
 
         const payload = {
             nombre,
-            email,
+            apellido: user?.apellido || "",
             telefono,
             dni,
-            fotoPerfil,
-            fotoUrl: fotoPerfil,
             direccion,
             provincia,
             ciudad,
             cp,
-            codigoPostal: cp,
-            bioPersonal,
-            disponibilidadContacto,
+            descripcion: bioPersonal,
+            fotoPerfil,
         };
 
         try {
             await authService.updateProfile(payload);
-        } catch (err) {
-            console.warn("No se pudo persistir en /auth/me, guardando localmente:", err);
+            if (userId && userId !== "current") {
+                const endpoint = isEnfermero ? `/enfermeros/${userId}` : `/cuidadores/${userId}`;
+                await api.put(endpoint, {
+                    nombre,
+                    telefono,
+                    descripcion: bioPersonal,
+                    fotoPerfil,
+                }).catch(() => null);
+            }
+            if (updateUser) {
+                updateUser({ nombre, telefono, fotoPerfil });
+            }
+        } catch (e) {
+            console.warn("Actualización local fallback:", e);
         }
 
         const storageMap = {
             [`user_profile_${userId}`]: JSON.stringify(payload),
             user_name: nombre, user_email: email, user_phone: telefono, user_dni: dni,
-            user_foto_perfil: fotoPerfil, user_address: direccion, user_province: provincia,
+            user_address: direccion, user_province: provincia,
             user_city: ciudad, user_cp: cp, user_bio_personal: bioPersonal,
             user_disp_contacto: disponibilidadContacto,
         };
@@ -162,7 +172,9 @@ export function CuidadorProfileTab({ onProfileUpdate, role }) {
                 fotoPerfil={fotoPerfil}
                 onFotoChange={async (url) => {
                     setFotoPerfil(url);
-                    localStorage.setItem("user_foto_perfil", url);
+                    if (updateUser) {
+                        updateUser({ fotoPerfil: url });
+                    }
                     try {
                         const uid = user?.id || localStorage.getItem("user_id");
                         if (uid && uid !== "current") {

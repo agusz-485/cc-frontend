@@ -1,6 +1,5 @@
 ﻿import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { authService } from '../services/authService';
-import { getMediaUrl } from '../api/client';
 
 const AuthContext = createContext(null);
 
@@ -36,7 +35,7 @@ export const AuthProvider = ({ children }) => {
         };
     }, [logout]);
 
-    // Al recargar la página, si hay token, intentamos recuperar el perfil
+    // Al recargar la página, si hay token, intentamos recuperar el perfil del usuario activo
     useEffect(() => {
         const initAuth = async () => {
             const savedToken = localStorage.getItem('token');
@@ -44,9 +43,10 @@ export const AuthProvider = ({ children }) => {
                 try {
                     const data = await authService.getProfile();
                     const userData = data?.user || data || {};
-                    const apellido = userData.apellido || userData.lastName || localStorage.getItem('user_apellido') || '';
-                    const rawNombre = userData.nombre || userData.name || userData.firstName || localStorage.getItem('user_name') || '';
-                    const rawFoto = userData.fotoPerfil || userData.fotoUrl || userData.foto || localStorage.getItem('user_foto') || localStorage.getItem('user_foto_perfil') || '';
+                    const userId = userData.id || localStorage.getItem('user_id') || 'current';
+                    const apellido = userData.apellido || userData.lastName || '';
+                    const rawNombre = userData.nombre || userData.name || userData.firstName || '';
+                    const rawFoto = userData.fotoPerfil || userData.fotoUrl || userData.foto || '';
 
                     let fullName = rawNombre;
                     if (apellido && !fullName.toLowerCase().includes(apellido.toLowerCase())) {
@@ -55,6 +55,7 @@ export const AuthProvider = ({ children }) => {
 
                     const fullUserData = {
                         ...userData,
+                        id: userId,
                         nombre: fullName || rawNombre,
                         apellido: apellido,
                         fotoPerfil: rawFoto,
@@ -66,6 +67,9 @@ export const AuthProvider = ({ children }) => {
                     if (rawFoto) {
                         localStorage.setItem('user_foto', rawFoto);
                         localStorage.setItem('user_foto_perfil', rawFoto);
+                    } else {
+                        localStorage.removeItem('user_foto');
+                        localStorage.removeItem('user_foto_perfil');
                     }
                     setUser(fullUserData);
                 } catch (error) {
@@ -80,6 +84,11 @@ export const AuthProvider = ({ children }) => {
     }, [logout]);
 
     const login = async (credentials) => {
+        // Limpiar cualquier residuo de foto o sesión previa antes de iniciar sesión
+        localStorage.removeItem('user_foto');
+        localStorage.removeItem('user_foto_perfil');
+        localStorage.removeItem('user_session');
+
         const data = await authService.login(credentials);
 
         const rawUser = data.user || data || {};
@@ -111,6 +120,9 @@ export const AuthProvider = ({ children }) => {
         if (rawFoto) {
             localStorage.setItem('user_foto', rawFoto);
             localStorage.setItem('user_foto_perfil', rawFoto);
+        } else {
+            localStorage.removeItem('user_foto');
+            localStorage.removeItem('user_foto_perfil');
         }
         localStorage.setItem('user_session', JSON.stringify(userData));
 
@@ -123,10 +135,15 @@ export const AuthProvider = ({ children }) => {
     const updateUser = (partialData) => {
         setUser((prev) => {
             const updated = { ...(prev || {}), ...partialData };
-            if (partialData.fotoPerfil || partialData.foto) {
-                const f = partialData.fotoPerfil || partialData.foto;
-                localStorage.setItem('user_foto', f);
-                localStorage.setItem('user_foto_perfil', f);
+            const newFoto = partialData.fotoPerfil || partialData.foto;
+            if (newFoto !== undefined) {
+                if (newFoto) {
+                    localStorage.setItem('user_foto', newFoto);
+                    localStorage.setItem('user_foto_perfil', newFoto);
+                } else {
+                    localStorage.removeItem('user_foto');
+                    localStorage.removeItem('user_foto_perfil');
+                }
             }
             if (partialData.nombre) localStorage.setItem('user_name', partialData.nombre);
             localStorage.setItem('user_session', JSON.stringify(updated));
