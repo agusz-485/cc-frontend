@@ -1,19 +1,12 @@
-import { useCallback, useState } from "react";
+﻿import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowRight, Mail } from "lucide-react";
-
 import { useAuth } from "../context/AuthContext";
-
+import { FormInput } from "../components/ui/FormInput";
+import { PasswordInput } from "../components/ui/PasswordInput";
+import { Toast } from "../components/ui/Toast";
+import { AuthWelcome } from "../components/auth/AuthWelcome";
 import Navbar from "../components/layout/Navbar";
-import AuthWelcome from "../components/auth/AuthWelcome";
-import FormInput from "../components/ui/FormInput";
-import PasswordInput from "../components/ui/PasswordInput";
-import Toast from "../components/ui/Toast";
-
-import {
-    validateEmail,
-    validateLoginPassword,
-} from "../components/validations/PersonalDataValidation";
 
 export default function Login() {
     const navigate = useNavigate();
@@ -27,9 +20,29 @@ export default function Login() {
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
 
-    const closeError = useCallback(() => {
+    const closeError = () => {
         setError("");
-    }, []);
+    };
+
+    const validateEmail = (value) => {
+        if (!value.trim()) {
+            return "El correo electrónico es obligatorio.";
+        }
+
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(value.trim())) {
+            return "Ingresá un correo electrónico válido.";
+        }
+
+        return "";
+    };
+
+    const validateLoginPassword = (value) => {
+        if (!value) {
+            return "La contraseña es obligatoria.";
+        }
+        return "";
+    };
 
     const handleEmailChange = (event) => {
         setEmail(event.target.value);
@@ -48,7 +61,8 @@ export default function Login() {
 
         if (loading) return;
 
-        const nextEmailError = validateEmail(email);
+        const cleanEmail = email.trim();
+        const nextEmailError = validateEmail(cleanEmail);
         const nextPasswordError = validateLoginPassword(password);
 
         setEmailError(nextEmailError);
@@ -71,7 +85,7 @@ export default function Login() {
 
         try {
             const data = await login({
-                email: email.trim(),
+                email: cleanEmail,
                 password,
             });
 
@@ -89,20 +103,23 @@ export default function Login() {
             );
         } catch (err) {
             const status = err.response?.status;
+            const serverMsg = err.response?.data?.message;
 
             if (!err.response) {
                 setError(
-                    "No pudimos conectarnos. Revisá tu conexión e intentá nuevamente."
+                    "No pudimos conectarnos con el servidor. Revisá tu conexión e intentá nuevamente."
                 );
-            } else if (status === 401) {
-                setError("Correo o contraseña incorrectos.");
+            } else if (status === 401 || status === 400) {
+                setError(
+                    serverMsg || "Correo electrónico o contraseña incorrectos. Verificá tus credenciales."
+                );
             } else if (status === 429) {
                 setError(
                     "Realizaste demasiados intentos. Esperá un momento y volvé a intentar."
                 );
             } else {
                 setError(
-                    "No pudimos iniciar sesión. Intentá nuevamente."
+                    serverMsg || "No pudimos iniciar sesión. Intentá nuevamente."
                 );
             }
         } finally {
