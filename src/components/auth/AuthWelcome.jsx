@@ -1,4 +1,4 @@
-export default function AuthWelcome({
+﻿export function AuthWelcome({
     title,
     description,
     image,
@@ -170,3 +170,5 @@ export default function AuthWelcome({
         </aside>
     );
 }
+
+export default AuthWelcome;

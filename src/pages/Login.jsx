@@ -2,10 +2,10 @@
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowRight, Mail } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
-import { FormInput } from "../components/ui/FormInput";
-import { PasswordInput } from "../components/ui/PasswordInput";
-import { Toast } from "../components/ui/Toast";
-import { AuthWelcome } from "../components/auth/AuthWelcome";
+import FormInput from "../components/ui/FormInput";
+import PasswordInput from "../components/ui/PasswordInput";
+import Toast from "../components/ui/Toast";
+import AuthWelcome from "../components/auth/AuthWelcome";
 import Navbar from "../components/layout/Navbar";
 
 export default function Login() {
